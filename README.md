@@ -1,42 +1,42 @@
 # ⚽ FPL Machine Learning: From Theory to Practice
 
-Este repositório documenta a aplicação de conceitos fundamentais de **Aprendizagem Automática** (Machine Learning) a dados reais de futebol, especificamente para a **Fantasy Premier League (FPL)**.
+This repository documents the application of fundamental **Machine Learning** concepts to real-world football data, specifically for the **Fantasy Premier League (FPL)**.
 
-O objetivo é transpor a teoria de sala de aula (implementação de algoritmos "do zero" com `numpy`) para um ambiente de produção utilizando bibliotecas profissionais (`scikit-learn`).
+The main goal is to bridge the gap between classroom theory (implementing algorithms "from scratch" using `numpy`) and a production environment using professional libraries (`scikit-learn`).
 
-## 📋 O que este projeto contém
+## 📋 What this project contains
 
-Este projeto foca-se em dois tipos principais de problemas de ML aplicados ao futebol:
+This project focuses on two main types of ML problems applied to football:
 
-### 1. Regressão Linear (Previsão de Pontos)
-* **Objetivo:** Prever o número exato de pontos que um jogador fará numa jornada.
-* **Matéria Aplicada:** *Linear Regression* com *Mean Squared Error (MSE)*.
-* **Input:** Estatísticas do jogador (Creativity, Threat, Influence), Custo, Minutos jogados.
-* **Output:** Valor contínuo (ex: `6.5` pontos).
+### 1. Linear Regression (Points Prediction)
+* **Objective:** Predict the exact number of points a player will score in a gameweek.
+* **Applied Theory:** *Linear Regression* with *Mean Squared Error (MSE)*.
+* **Input:** Player stats (Creativity, Threat, Influence), Cost, Minutes played.
+* **Output:** Continuous value (e.g., `6.5` points).
 
-### 2. Classificação Linear (Previsão de Resultados)
-* **Objetivo:** Prever o desfecho de um jogo (Vitória Casa, Empate, Vitória Fora).
-* **Matéria Aplicada:** *Linear Classification* usando *Softmax* e *Cross-Entropy Loss*.
-* **Output:** Probabilidades para cada classe (ex: `[0.60, 0.25, 0.15]`).
+### 2. Linear Classification (Match Results Prediction)
+* **Objective:** Predict the outcome of a match (Home Win, Draw, Away Win).
+* **Applied Theory:** *Linear Classification* using *Softmax* and *Cross-Entropy Loss*.
+* **Output:** Probabilities for each class (e.g., `[0.60, 0.25, 0.15]`).
 
-## 🛠️ Stack Tecnológica
+## 🛠️ Tech Stack
 
-* **Linguagem:** Python 3
-* **Ambiente:** VS Code + Jupyter Notebooks (`.ipynb`)
-* **Bibliotecas:**
-    * `pandas` & `numpy`: Manipulação de dados.
-    * `matplotlib` & `seaborn`: Visualização de gráficos.
-    * `scikit-learn`: Implementação otimizada dos modelos de ML.
+* **Language:** Python 3
+* **Environment:** VS Code + Jupyter Notebooks (`.ipynb`)
+* **Libraries:**
+    * `pandas` & `numpy`: Data manipulation.
+    * `matplotlib` & `seaborn`: Data visualization.
+    * `scikit-learn`: Optimized implementation of ML models.
 
-## 📚 Dados
+## 📚 Data Source
 
-Os dados históricos utilizados são provenientes do repositório público da comunidade FPL:
+Historical data is sourced from the community-maintained public repository:
 * [Vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League)
 
 ---
 
-### 🚀 Como Executar
+### 🚀 How to Run
 
-1.  Instalar dependências: `pip install pandas numpy matplotlib seaborn scikit-learn jupyter`
-2.  Abrir o VS Code.
-3.  Executar o ficheiro `FPL_Project_Start.ipynb`.
+1.  Install dependencies: `pip install pandas numpy matplotlib seaborn scikit-learn jupyter`
+2.  Open VS Code.
+3.  Run the `FPL_Project_Start.ipynb` file.
