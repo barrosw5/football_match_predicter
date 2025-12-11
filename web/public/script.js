@@ -1,21 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
     const API_BASE = "http://127.0.0.1:5000";
     
+    // Elementos do DOM
     const dateInput = document.getElementById('match-date');
     const matchSelect = document.getElementById('quick-match');
     const form = document.getElementById('prediction-form');
     const resultArea = document.getElementById('result-area');
     const dateHidden = document.getElementById('match-date-hidden');
+    
+    // --- NOVOS ELEMENTOS (As caixas de texto das equipas) ---
+    // Certifica-te que no HTML tens: id="input-home" e id="input-away"
+    const homeInput = document.getElementById('input-home');
+    const awayInput = document.getElementById('input-away');
 
+    // Define a data de hoje
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
     dateHidden.value = today;
 
-    // --- 1. FETCH JOGOS ---
+    // --- 1. PREENCHIMENTO AUTOMÁTICO DAS EQUIPAS ---
+    // Este evento dispara sempre que mudas o jogo no Dropdown
+    matchSelect.addEventListener('change', () => {
+        const selectedValue = matchSelect.value;
+        
+        if (selectedValue) {
+            try {
+                // Converte o texto do value de volta para Objeto
+                const matchData = JSON.parse(selectedValue);
+                
+                // Preenche as caixas readonly
+                if(homeInput) homeInput.value = matchData.home_team || matchData.homeTeam;
+                if(awayInput) awayInput.value = matchData.away_team || matchData.awayTeam;
+                
+            } catch (e) {
+                console.error("Erro ao processar dados do jogo:", e);
+            }
+        } else {
+            // Se selecionar a opção padrão, limpa as caixas
+            if(homeInput) homeInput.value = "";
+            if(awayInput) awayInput.value = "";
+        }
+    });
+
+    // --- 2. FETCH JOGOS DA API ---
     async function fetchFixtures(date) {
         matchSelect.disabled = true;
         matchSelect.innerHTML = '<option>⏳ A carregar jogos...</option>';
         
+        // Limpar inputs enquanto carrega
+        if(homeInput) homeInput.value = "";
+        if(awayInput) awayInput.value = "";
+
         try {
             const res = await fetch(`${API_BASE}/api/fixtures`, {
                 method: 'POST',
@@ -27,24 +62,31 @@ document.addEventListener('DOMContentLoaded', () => {
             matchSelect.innerHTML = '<option value="">-- Seleciona um Jogo --</option>';
 
             if (matches.length === 0) {
-                matchSelect.innerHTML = '<option>⚠️ Sem jogos disponíveis</option>';
+                matchSelect.innerHTML = '<option value="">⚠️ Sem jogos compatíveis hoje</option>';
             } else {
                 const groups = {};
+                // Agrupar por Liga
                 matches.forEach(m => {
                     const league = `${m.league_name} (${m.country})`;
                     if (!groups[league]) groups[league] = [];
                     groups[league].push(m);
                 });
 
+                // Criar o Dropdown com Optgroups
                 for (const [leagueName, games] of Object.entries(groups)) {
                     const group = document.createElement('optgroup');
                     group.label = leagueName;
                     games.forEach(m => {
                         const opt = document.createElement('option');
+                        // Guardamos todo o objeto do jogo no value para usar depois
                         opt.value = JSON.stringify(m);
+                        
                         const home = m.home_team || m.homeTeam;
                         const away = m.away_team || m.awayTeam;
-                        opt.textContent = `${m.match_time} ⏰ ${home} vs ${away}`;
+                        // Ícone muda se o jogo já tiver terminado (FT) ou estiver a decorrer
+                        const statusIcon = (m.status_short === 'FT') ? '🏁' : '⏰';
+                        
+                        opt.textContent = `${m.match_time} ${statusIcon} ${home} vs ${away}`;
                         group.appendChild(opt);
                     });
                     matchSelect.appendChild(group);
@@ -58,15 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Atualizar lista quando muda a data
     dateInput.addEventListener('change', (e) => {
         dateHidden.value = e.target.value;
         fetchFixtures(e.target.value);
     });
 
-    // --- 2. GERAR PREVISÃO COM NOVO DESIGN ---
+    // --- 3. GERAR PREVISÃO (SUBMIT) ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!matchSelect.value) return alert("Seleciona um jogo!");
+        if (!matchSelect.value) return alert("Por favor, seleciona um jogo da lista!");
 
         const mData = JSON.parse(matchSelect.value);
         const formData = new FormData(form);
@@ -76,8 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
             home_team: mData.home_team || mData.homeTeam,
             away_team: mData.away_team || mData.awayTeam,
             division: mData.division || 'E0',
-            odd_h: formData.get('odd_h'), odd_d: formData.get('odd_d'), odd_a: formData.get('odd_a'),
-            odd_1x: formData.get('odd_1x'), odd_12: formData.get('odd_12'), odd_x2: formData.get('odd_x2')
+            odd_h: formData.get('odd_h'), 
+            odd_d: formData.get('odd_d'), 
+            odd_a: formData.get('odd_a'),
+            odd_1x: formData.get('odd_1x'), 
+            odd_12: formData.get('odd_12'), 
+            odd_x2: formData.get('odd_x2')
         };
 
         resultArea.innerHTML = '<div class="loading">🔮 A consultar os astros do futebol...</div>';
@@ -94,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formatEV = (val) => (val * 100).toFixed(1) + "%";
 
-            // --- CONSTRUÇÃO DO SCANNER ---
+            // --- CONSTRUÇÃO DO SCANNER HTML ---
             let scannerHTML = data.scanner.map(s => {
                 let badgeClass = "badge-bad";
                 let icon = "";
@@ -143,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${data.safe.ev < 0 ? '<div style="color: #f59e0b; font-size: 0.8rem; margin-top:5px;">⚠️ Odd baixa (EV Negativo). Cuidado.</div>' : ''}
                 </div>` : '';
 
-            // RENDER FINAL
+            // RENDER FINAL NA PÁGINA
             resultArea.innerHTML = `
                 <h3 style="border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px;">
                     <i class="fa-solid fa-futbol"></i> ${data.home} <span style="color:#64748b">vs</span> ${data.away}
@@ -189,5 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Iniciar a busca de jogos ao carregar a página
     fetchFixtures(dateInput.value);
 });
