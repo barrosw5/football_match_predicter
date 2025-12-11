@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // MUDANÇA IMPORTANTE: Deixa vazio para usar o domínio atual (Render ou Localhost) auto-detectado
+    // API_BASE vazio para o Render usar o próprio domínio
     const API_BASE = ""; 
     
     // Elementos do DOM
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultArea = document.getElementById('result-area');
     const dateHidden = document.getElementById('match-date-hidden');
     
-    // Caixas de Texto das Equipas (ReadOnly)
+    // Caixas de Texto das Equipas
     const homeInput = document.getElementById('input-home');
     const awayInput = document.getElementById('input-away');
 
@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Carrega jogos quando mudas a data
     dateInput.addEventListener('change', (e) => {
         dateHidden.value = e.target.value;
         fetchFixtures(e.target.value);
@@ -146,15 +147,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 3. SUBMETER PREVISÃO ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!matchSelect.value) return alert("Seleciona um jogo!");
+        
+        // Se não houver jogo selecionado E não houver nomes manuais, avisa
+        if (!matchSelect.value && (!homeInput.value || !awayInput.value)) {
+            return alert("Seleciona um jogo OU escreve os nomes das equipas!");
+        }
 
-        const mData = JSON.parse(matchSelect.value);
+        let mData = {};
+        try {
+            if (matchSelect.value) mData = JSON.parse(matchSelect.value);
+        } catch(e) {}
         
         const payload = {
             date: dateHidden.value,
-            home_team: mData.home_team || mData.homeTeam,
-            away_team: mData.away_team || mData.awayTeam,
-            division: mData.division || 'E0',
+            // Usa o que está escrito na caixa (seja manual ou automático)
+            home_team: homeInput.value, 
+            away_team: awayInput.value,
+            division: mData.division || 'E0', // Assume E0 se for manual
             odd_h: parseFloat(inputH.value) || 0, 
             odd_d: parseFloat(inputD.value) || 0, 
             odd_a: parseFloat(inputA.value) || 0,
@@ -283,5 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    fetchFixtures(dateInput.value);
+    // MUDANÇA: Comentei a linha que carregava automaticamente ao abrir
+    // fetchFixtures(dateInput.value); 
 });

@@ -7,42 +7,54 @@ import pandas as pd
 import numpy as np
 from scipy.stats import poisson
 import traceback
-import time 
+import time
+from datetime import datetime
 
-# --- CONFIGURAÇÃO PARA DEPLOY (RENDER) ---
+# --- CONFIGURAÇÃO (RENDER) ---
 app = Flask(__name__, static_folder='../public', static_url_path='')
 CORS(app)
 
-# --- SEGURANÇA: API KEY ---
-API_KEY = os.getenv("API_KEY")
+# --- NOVA API KEY (The Odds API) ---
+# No Render, tens de criar a variável: API_KEY_ODDS
+# Se testares no PC, troca a string abaixo pela tua chave nova
+API_KEY = os.getenv("API_KEY_ODDS", "COLA_AQUI_A_TUA_CHAVE_SE_TESTARES_LOCAL")
 
-if not API_KEY:
-    print("⚠️ AVISO: A API Key não foi detetada nas variáveis de ambiente!")
+# --- CONFIGURAÇÃO DAS LIGAS (The Odds API Keys) ---
+# Estas são as chaves que a nova API usa para identificar as ligas
+SUPPORTED_LEAGUES = [
+    'soccer_portugal_primeira_liga',
+    'soccer_epl',             # Premier League
+    'soccer_spain_la_liga',   # La Liga
+    'soccer_germany_bundesliga',
+    'soccer_italy_serie_a',
+    'soccer_france_ligue_one',
+    'soccer_uefa_champs_league',
+    'soccer_uefa_europa_league'
+]
 
-# --- SISTEMA DE CACHE (RAM) ---
-cache_fixtures = {} 
-cache_odds = {}     
-# ALTERAÇÃO AQUI: 86400 segundos = 24 Horas de memória
-CACHE_DURATION = 86400 
-
-# Mapeamento de Ligas
-LEAGUE_MAP = {
-    39: 'E0', 78: 'D1', 140: 'SP1', 61: 'F1', 135: 'I1',
-    40: 'E1', 79: 'D2', 141: 'SP2', 62: 'F2', 136: 'I2',
-    94: 'P1', 88: 'N1', 144: 'B1', 203: 'T1', 197: 'G1', 179: 'SC0',
-    2: 'CL',
-    3: 'CL',   # Liga Europa
-    848: 'CL'  # Liga Conferência
+# Mapa para traduzir os nomes da API nova para os códigos que o teu modelo entende
+MODEL_DIV_MAP = {
+    'soccer_portugal_primeira_liga': 'P1',
+    'soccer_epl': 'E0',
+    'soccer_spain_la_liga': 'SP1',
+    'soccer_germany_bundesliga': 'D1',
+    'soccer_italy_serie_a': 'I1',
+    'soccer_france_ligue_one': 'F1',
+    'soccer_uefa_champs_league': 'CL',
+    'soccer_uefa_europa_league': 'CL' # Tratamos como CL para o modelo
 }
 
-# --- CARREGAMENTO ---
-model_path = os.path.join(os.path.dirname(__file__), 'football_brain.pkl')
+# --- CACHE ---
+# Cache unificada: guarda o JSON completo da API por liga
+api_cache = {} 
+CACHE_DURATION = 20000 # ~6 Horas (A API dá jogos para dias à frente, não precisamos refrescar sempre)
 
+# --- CARREGAMENTO DO MODELO ---
+model_path = os.path.join(os.path.dirname(__file__), 'football_brain.pkl')
 model_multi = None
 xgb_goals_h = None
 df_ready = pd.DataFrame()
 
-print(f"\n🔄 A INICIAR SERVIDOR...")
 if os.path.exists(model_path):
     try:
         artifacts = joblib.load(model_path)
@@ -56,169 +68,150 @@ if os.path.exists(model_path):
         df_ready = artifacts.get('df_ready', pd.DataFrame())
         print("✅ MODELOS CARREGADOS!")
     except Exception as e:
-        print(f"❌ ERRO CRÍTICO: {e}")
-else:
-    print(f"❌ Ficheiro não encontrado: {model_path}")
+        print(f"❌ ERRO CRÍTICO MODELO: {e}")
 
+# --- HELPER: Limpeza de Nomes ---
+# A nova API pode ter nomes ligeiramente diferentes (ex: "Sporting Lisbon" vs "Sporting CP")
+# Tenta normalizar para o que o modelo conhece
+def normalize_name(name):
+    name_map = {
+        'Sporting Lisbon': 'Sporting CP', 'Sporting': 'Sporting CP',
+        'Benfica': 'Benfica', 'FC Porto': 'Porto',
+        'Manchester United': 'Man United', 'Manchester City': 'Man City',
+        'Paris Saint Germain': 'Paris SG', 'PSG': 'Paris SG',
+        'Bayern Munich': 'Bayern Munich',
+        'Inter Milan': 'Inter', 'AC Milan': 'Milan',
+        'Atletico Madrid': 'Ath Madrid'
+    }
+    return name_map.get(name, name)
 
-# --- NOVA ROTA: SERVIR O SITE (Frontend) ---
+# --- ROTAS ---
+
 @app.route('/')
 def serve_index():
     return send_from_directory(app.static_folder, 'index.html')
 
-
-# --- ROTA 1: BUSCAR JOGOS ---
 @app.route('/api/fixtures', methods=['POST'])
 def get_fixtures():
     try:
         data = request.get_json()
-        date_query = data.get('date') # Ex: "2025-12-12"
+        target_date_str = data.get('date') # Ex: "2025-12-12"
         
-        # 1. VERIFICAR CACHE (Global para todos os utilizadores)
+        all_matches = []
         current_time = time.time()
-        
-        if date_query in cache_fixtures:
-            cached_item = cache_fixtures[date_query]
-            # Se a cache ainda for válida (menos de 24h), usa-a
-            if current_time - cached_item['timestamp'] < CACHE_DURATION:
-                print(f"⚡ CACHE GLOBAL: Servindo lista de jogos de {date_query}")
-                return jsonify(cached_item['data'])
 
-        # 2. SE NÃO HOUVER NA CACHE, PEDE À API
-        url = "https://v3.football.api-sports.io/fixtures"
-        
-        params = {'date': date_query}
-        headers = {'x-rapidapi-key': API_KEY, 'x-rapidapi-host': "v3.football.api-sports.io"}
-
-        print(f"📡 API: A pedir novos jogos para data: {date_query}...")
-        response = requests.get(url, headers=headers, params=params)
-        
-        # DEBUG
-        resp_json = response.json()
-        if 'errors' in resp_json and resp_json['errors']:
-            print(f"❌ ERRO DA API: {resp_json['errors']}")
-        
-        if response.status_code != 200:
-            return jsonify([])
-
-        fixtures_data = resp_json.get('response', [])
-        supported_matches = []
-
-        for f in fixtures_data:
-            lid = f['league']['id']
-            lname = f['league']['name']
+        # Iterar sobre as ligas configuradas e buscar dados (da cache ou da API)
+        for sport_key in SUPPORTED_LEAGUES:
             
-            if lid in LEAGUE_MAP:
-                supported_matches.append({
-                    'id': f['fixture']['id'], 
-                    'home_team': f['teams']['home']['name'],
-                    'away_team': f['teams']['away']['name'],
-                    'division': LEAGUE_MAP[lid],
-                    'league_name': lname, 
-                    'country': f['league']['country'],
-                    'match_time': f['fixture']['date'].split('T')[1][:5],
-                    'homeTeam': f['teams']['home']['name'],
-                    'awayTeam': f['teams']['away']['name'],
-                    'status_short': f['fixture']['status']['short']
-                })
+            # 1. Verificar Cache para esta liga
+            league_data = []
+            if sport_key in api_cache and (current_time - api_cache[sport_key]['ts'] < CACHE_DURATION):
+                league_data = api_cache[sport_key]['data']
+            else:
+                # 2. Se não houver cache, pede à API (Gasta 1 crédito)
+                print(f"📡 API CALL: Atualizando {sport_key}...")
+                url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
+                params = {
+                    'apiKey': API_KEY,
+                    'regions': 'eu', # Odds Europeias
+                    'markets': 'h2h', # Apenas vencedor (mais barato/simples)
+                    'oddsFormat': 'decimal'
+                }
+                res = requests.get(url, params=params)
+                if res.status_code == 200:
+                    league_data = res.json()
+                    # Guarda na cache
+                    api_cache[sport_key] = {'data': league_data, 'ts': current_time}
+                else:
+                    print(f"❌ Erro API {sport_key}: {res.status_code}")
 
-        supported_matches.sort(key=lambda x: (x['league_name'], x['match_time']))
-        
-        # 3. GUARDAR NA CACHE GLOBAL
-        if supported_matches:
-            cache_fixtures[date_query] = {
-                'data': supported_matches,
-                'timestamp': current_time
-            }
-        
-        print(f"✅ Jogos: {len(fixtures_data)} recebidos -> {len(supported_matches)} suportados.")
-        return jsonify(supported_matches)
+            # 3. Processar jogos e filtrar pela DATA pedida
+            for game in league_data:
+                # A API devolve datas assim: "2025-12-12T20:00:00Z"
+                game_date = game['commence_time'].split('T')[0]
+                
+                if game_date == target_date_str:
+                    # Extrair Odds (se houver)
+                    odds_h, odds_d, odds_a = 0, 0, 0
+                    bookmakers = game.get('bookmakers', [])
+                    if bookmakers:
+                        # Tenta usar a primeira casa de apostas disponível
+                        markets = bookmakers[0].get('markets', [])
+                        if markets:
+                            outcomes = markets[0].get('outcomes', [])
+                            for out in outcomes:
+                                if out['name'] == game['home_team']: odds_h = out['price']
+                                elif out['name'] == game['away_team']: odds_a = out['price']
+                                elif out['name'] == 'Draw': odds_d = out['price']
+
+                    all_matches.append({
+                        'id': game['id'], # ID da nova API
+                        'home_team': normalize_name(game['home_team']),
+                        'away_team': normalize_name(game['away_team']),
+                        'division': MODEL_DIV_MAP.get(sport_key, 'E0'),
+                        'league_name': game['sport_title'],
+                        'country': 'World',
+                        'match_time': game['commence_time'].split('T')[1][:5],
+                        'homeTeam': normalize_name(game['home_team']), # Compatibilidade
+                        'awayTeam': normalize_name(game['away_team']),
+                        'status_short': 'NS', # Assumimos Not Started
+                        # Guardamos as odds JÁ AQUI para não precisar de outro pedido
+                        'cached_odds': {'h': odds_h, 'd': odds_d, 'a': odds_a}
+                    })
+
+        all_matches.sort(key=lambda x: x['match_time'])
+        print(f"✅ Jogos encontrados para {target_date_str}: {len(all_matches)}")
+        return jsonify(all_matches)
 
     except Exception as e:
-        print(f"❌ Erro API Crítico: {e}")
         traceback.print_exc()
         return jsonify([])
 
-
-# --- ROTA 2: BUSCAR ODDS ---
 @app.route('/api/odds', methods=['POST'])
 def get_odds():
+    # Com esta nova API, já temos as odds guardadas na listagem de jogos!
+    # O frontend vai mandar o ID, nós procuramos na nossa super-cache.
     try:
         data = request.get_json()
         fid = data.get('fixture_id')
         
-        # 1. VERIFICAR CACHE GLOBAL
-        current_time = time.time()
-        
-        if fid in cache_odds:
-            cached_item = cache_odds[fid]
-            if current_time - cached_item['timestamp'] < CACHE_DURATION:
-                print(f"⚡ CACHE GLOBAL: Servindo odds guardadas para jogo {fid}")
-                return jsonify(cached_item['data'])
-
-        # 2. PEDIR À API
-        url = "https://v3.football.api-sports.io/odds"
-        params = {'fixture': fid} 
-        headers = {'x-rapidapi-key': API_KEY, 'x-rapidapi-host': "v3.football.api-sports.io"}
-        
-        print(f"📡 API: A pedir odds para jogo {fid}...")
-        response = requests.get(url, headers=headers, params=params)
-        resp_json = response.json()
-        
-        if not resp_json.get('response'):
-            return jsonify({"error": "Odds indisponíveis"})
+        # Procura o jogo em TODAS as caches de ligas
+        found_game = None
+        for sport_key in api_cache:
+            for game in api_cache[sport_key]['data']:
+                if game['id'] == fid:
+                    found_game = game
+                    break
+            if found_game: break
             
-        all_bookmakers = resp_json['response'][0]['bookmakers']
-        if not all_bookmakers: return jsonify({"error": "Sem bookies"})
-        
-        # Prioridade
-        target_bookie = next((b for b in all_bookmakers if "Betclic" in b['name']), None)
-        if not target_bookie:
-            target_bookie = next((b for b in all_bookmakers if "Bet365" in b['name']), None)
-        if not target_bookie:
-            target_bookie = all_bookmakers[0]
+        if not found_game:
+            return jsonify({"error": "Odds não encontradas (Tente recarregar)"})
 
-        print(f"✅ Odds obtidas de: {target_bookie['name']}")
-        
-        bets = target_bookie['bets']
-        
-        match_winner = next((b for b in bets if b['id'] == 1), None)
-        odds_1x2 = {'h': 0, 'd': 0, 'a': 0}
-        
-        if match_winner:
-            vals = match_winner['values']
-            odds_1x2['h'] = next((v['odd'] for v in vals if v['value'] == 'Home'), 0)
-            odds_1x2['d'] = next((v['odd'] for v in vals if v['value'] == 'Draw'), 0)
-            odds_1x2['a'] = next((v['odd'] for v in vals if v['value'] == 'Away'), 0)
-
-        double_chance = next((b for b in bets if b['id'] == 12), None)
-        odds_dc = {'1x': 0, '12': 0, 'x2': 0}
-
-        if double_chance:
-            vals_dc = double_chance['values']
-            odds_dc['1x'] = next((v['odd'] for v in vals_dc if v['value'] == 'Home/Draw'), 0)
-            odds_dc['12'] = next((v['odd'] for v in vals_dc if v['value'] == 'Home/Away'), 0)
-            odds_dc['x2'] = next((v['odd'] for v in vals_dc if v['value'] == 'Draw/Away'), 0)
+        # Extrair Odds
+        odds = {'h': 0, 'd': 0, 'a': 0}
+        bookmakers = found_game.get('bookmakers', [])
+        if bookmakers:
+            # Tenta encontrar uma casa conhecida ou usa a primeira
+            target_bookie = next((b for b in bookmakers if 'Betclic' in b['title']), None)
+            if not target_bookie: target_bookie = bookmakers[0]
             
-        result_data = {
-            'odd_h': odds_1x2['h'], 'odd_d': odds_1x2['d'], 'odd_a': odds_1x2['a'],
-            'odd_1x': odds_dc['1x'], 'odd_12': odds_dc['12'], 'odd_x2': odds_dc['x2']
-        }
+            markets = target_bookie.get('markets', [])
+            for m in markets:
+                if m['key'] == 'h2h':
+                    for out in m['outcomes']:
+                        if out['name'] == found_game['home_team']: odds['h'] = out['price']
+                        elif out['name'] == found_game['away_team']: odds['a'] = out['price']
+                        elif out['name'] == 'Draw': odds['d'] = out['price']
 
-        # 3. GUARDAR NA CACHE GLOBAL
-        cache_odds[fid] = {
-            'data': result_data,
-            'timestamp': current_time
-        }
-
-        return jsonify(result_data)
+        return jsonify({
+            'odd_h': odds['h'], 'odd_d': odds['d'], 'odd_a': odds['a'],
+            'odd_1x': 0, 'odd_12': 0, 'odd_x2': 0 # API Grátis nem sempre dá DC, deixamos a 0
+        })
 
     except Exception as e:
         print(f"Erro Odds: {e}")
         return jsonify({"error": "Erro servidor"})
 
-
-# --- ROTA 3: PREVISÃO (PREDICT) ---
 @app.route('/api/predict', methods=['POST'])
 def predict():
     global model_multi, xgb_goals_h, xgb_goals_a, df_ready
@@ -236,22 +229,17 @@ def predict():
         def get_latest_stats(team_name):
             if 'Team' not in df_ready.columns: 
                 return {f: df_ready[f].mean() if f in df_ready.columns else 0 for f in features}
-            
             team_history = df_ready[df_ready['Team'] == team_name]
-            
             if team_history.empty: 
                 return {f: df_ready[f].mean() if f in df_ready.columns else 0 for f in features}
-            
             return team_history.iloc[-1].to_dict()
 
         home_stats = get_latest_stats(home)
         away_stats = get_latest_stats(away)
 
         for f in features:
-            if f in home_stats: 
-                input_data[f] = home_stats[f]
-            else:
-                input_data[f] = df_ready[f].mean() if not df_ready.empty and f in df_ready else 0
+            if f in home_stats: input_data[f] = home_stats[f]
+            else: input_data[f] = df_ready[f].mean() if not df_ready.empty and f in df_ready else 0
 
         match_date = pd.to_datetime(date_str)
         if not df_ready.empty:
@@ -306,7 +294,6 @@ def predict():
             elif ev > 0: status = "✅ VALOR"
             elif ev > -0.05: status = "😐 JUSTO"
             else: status = "❌ FRACO"
-            
             opportunities.append({
                 "name": name, "odd": odd, "odd_prob": f"{implied_prob:.1%}", 
                 "prob_raw": prob, "prob_txt": f"{prob:.1%}", 
