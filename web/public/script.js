@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // API_BASE vazio para o Render usar o próprio domínio
     const API_BASE = ""; 
     
     // Elementos do DOM
@@ -53,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(el) { el.value = ""; el.placeholder = "A carregar..."; } 
                 });
 
-                // Pedir Odds
+                // Pedir Odds (Usa o ID da nova API)
                 if (matchData.id) {
                     console.log(`📡 A pedir odds ID: ${matchData.id}`);
                     
@@ -73,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(inputD) inputD.value = formatOdd(oddsData.odd_d);
                         if(inputA) inputA.value = formatOdd(oddsData.odd_a);
                         
+                        // A API Grátis não dá estas, ficam a 0 ou manual
                         if(input1X) input1X.value = formatOdd(oddsData.odd_1x);
                         if(input12) input12.value = formatOdd(oddsData.odd_12);
                         if(inputX2) inputX2.value = formatOdd(oddsData.odd_x2);
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             matchSelect.innerHTML = '<option value="">-- Seleciona um Jogo --</option>';
 
             if (matches.length === 0) {
-                matchSelect.innerHTML = '<option value="">⚠️ Sem jogos disponíveis</option>';
+                matchSelect.innerHTML = '<option value="">⚠️ Sem jogos disponíveis para esta data</option>';
             } else {
                 const groups = {};
                 matches.forEach(m => {
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Se não houver jogo selecionado E não houver nomes manuais, avisa
+        // Validação híbrida (Manual ou Automática)
         if (!matchSelect.value && (!homeInput.value || !awayInput.value)) {
             return alert("Seleciona um jogo OU escreve os nomes das equipas!");
         }
@@ -160,10 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const payload = {
             date: dateHidden.value,
-            // Usa o que está escrito na caixa (seja manual ou automático)
-            home_team: homeInput.value, 
+            home_team: homeInput.value, // Usa sempre o valor da caixa de texto
             away_team: awayInput.value,
-            division: mData.division || 'E0', // Assume E0 se for manual
+            division: mData.division || 'E0',
             odd_h: parseFloat(inputH.value) || 0, 
             odd_d: parseFloat(inputD.value) || 0, 
             odd_a: parseFloat(inputA.value) || 0,
@@ -184,15 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) throw new Error(data.error);
 
             // FUNÇÃO PARA GERAR A MATRIZ DE RESULTADOS (Heatmap)
+            // Conta de baixo (0) para cima (5) no eixo Y
             const generateMatrixHTML = (matrix) => {
                 let html = '<div class="score-matrix">';
                 
-                // Cabeçalho (Golos Fora)
+                // Cabeçalho (Golos Fora - Visitante)
                 html += '<div class="matrix-header"></div>'; 
                 for(let a=0; a<6; a++) html += `<div class="matrix-header">${a}</div>`;
                 
-                // Linhas (Golos Casa)
-                for(let h=0; h<6; h++) {
+                // Linhas (Golos Casa - Visitado)
+                for(let h=5; h>=0; h--) {
                     html += `<div class="matrix-row-label">${h}</div>`;
                     for(let a=0; a<6; a++) {
                         const prob = matrix[h][a];
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const isBest = prob === maxVal;
                         const borderClass = isBest ? "matrix-best" : "";
 
-                        html += `<div class="matrix-cell ${bgClass} ${borderClass}" title="Casa ${h} - ${a} Fora">
+                        html += `<div class="matrix-cell ${bgClass} ${borderClass}" title="${data.home} ${h} - ${a} ${data.away}">
                                     ${perc}%
                                  </div>`;
                     }
@@ -245,7 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="xg-item">
                             ⚽ ${data.away}: <strong style="color:var(--primary)">${data.xg.away}</strong> golos
                         </div>
-                        <div class="xg-item highlight-score">
+                        
+                        <div class="xg-item" style="width: 100%; border-top: 1px solid #334155; margin-top: 5px; padding-top: 5px;">
+                            🥅 Ambas Marcam: <strong style="color:var(--primary)">${data.btts}</strong>
+                        </div>
+
+                        <div class="xg-item highlight-score" style="margin-top: 10px;">
                             🎯 Placar Mais Provável: <strong>${data.score.placar}</strong> (${data.score.prob})
                         </div>
                     </div>
@@ -254,9 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="margin-top: 20px;">
                     <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:0.9rem; text-align:center;">Matriz de Probabilidades (Resultado Exato)</h4>
                     <div class="matrix-container-wrapper">
-                        <div class="matrix-axis-y">🏠 Casa</div>
+                        <div class="matrix-axis-y">🏠 ${data.home}</div>
                         <div style="flex:1">
-                            <div class="matrix-axis-x">✈️ Fora</div>
+                            <div class="matrix-axis-x">✈️ ${data.away}</div>
                             ${generateMatrixHTML(data.matrix)}
                         </div>
                     </div>
@@ -291,7 +296,4 @@ document.addEventListener('DOMContentLoaded', () => {
             resultArea.innerHTML = `<div class="error-box">❌ ${err.message}</div>`;
         }
     });
-
-    // MUDANÇA: Comentei a linha que carregava automaticamente ao abrir
-    // fetchFixtures(dateInput.value); 
 });

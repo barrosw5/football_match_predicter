@@ -14,17 +14,17 @@ from datetime import datetime
 app = Flask(__name__, static_folder='../public', static_url_path='')
 CORS(app)
 
-# --- NOVA API KEY (The Odds API) ---
-# No Render, cria a variável: API_KEY_ODDS
-# Se testares no PC, substitui a string abaixo pela tua chave nova
-API_KEY = os.getenv("API_KEY_ODDS", "COLA_AQUI_A_TUA_CHAVE_SE_TESTARES_LOCAL")
+# --- SEGURANÇA: API KEY ---
+API_KEY = os.getenv("API_KEY_ODDS")
 
-# --- CONFIGURAÇÃO DAS LIGAS (The Odds API Keys) ---
-# Estas chaves dizem à API quais as ligas que queremos ver
+if not API_KEY:
+    print("⚠️ AVISO: A API Key não foi detetada! Configure API_KEY_ODDS no Render.")
+
+# --- CONFIGURAÇÃO DAS LIGAS ---
 SUPPORTED_LEAGUES = [
     'soccer_portugal_primeira_liga',
-    'soccer_epl',             # Premier League
-    'soccer_spain_la_liga',   # La Liga
+    'soccer_epl',             
+    'soccer_spain_la_liga',   
     'soccer_germany_bundesliga',
     'soccer_italy_serie_a',
     'soccer_france_ligue_one',
@@ -32,7 +32,6 @@ SUPPORTED_LEAGUES = [
     'soccer_uefa_europa_league'
 ]
 
-# Mapa para traduzir os nomes da API nova para os códigos do teu modelo .pkl
 MODEL_DIV_MAP = {
     'soccer_portugal_primeira_liga': 'P1',
     'soccer_epl': 'E0',
@@ -44,13 +43,11 @@ MODEL_DIV_MAP = {
     'soccer_uefa_europa_league': 'CL' 
 }
 
-# --- CACHE (Otimização) ---
-# Cache unificada: guarda o JSON completo da API por liga
-# Como a API dá jogos para vários dias, guardamos por 6 horas para poupar pedidos
+# --- CACHE ---
 api_cache = {} 
 CACHE_DURATION = 21600 # 6 Horas
 
-# --- CARREGAMENTO DO MODELO ---
+# --- CARREGAMENTO ---
 model_path = os.path.join(os.path.dirname(__file__), 'football_brain.pkl')
 model_multi = None
 xgb_goals_h = None
@@ -72,7 +69,6 @@ if os.path.exists(model_path):
         print(f"❌ ERRO CRÍTICO MODELO: {e}")
 
 # --- HELPER: Normalizar Nomes ---
-# A nova API usa nomes em Inglês (ex: "Sporting Lisbon"), o modelo quer "Sporting CP"
 def normalize_name(name):
     name_map = {
         'Sporting Lisbon': 'Sporting CP', 'Sporting': 'Sporting CP',
@@ -95,48 +91,41 @@ def serve_index():
 def get_fixtures():
     try:
         data = request.get_json()
-        target_date_str = data.get('date') # Ex: "2025-12-12"
+        target_date_str = data.get('date')
         
         all_matches = []
         current_time = time.time()
 
-        # Iterar sobre as ligas configuradas
         for sport_key in SUPPORTED_LEAGUES:
-            
-            # 1. Verificar Cache para esta liga
+            # 1. Cache
             league_data = []
             if sport_key in api_cache and (current_time - api_cache[sport_key]['ts'] < CACHE_DURATION):
                 league_data = api_cache[sport_key]['data']
             else:
-                # 2. Se não houver cache, pede à API (Gasta 1 crédito)
+                # 2. API
                 print(f"📡 API CALL: Atualizando {sport_key}...")
                 url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
                 params = {
                     'apiKey': API_KEY,
-                    'regions': 'eu', # Odds Europeias
-                    'markets': 'h2h', # Apenas vencedor
+                    'regions': 'eu',
+                    'markets': 'h2h',
                     'oddsFormat': 'decimal'
                 }
                 res = requests.get(url, params=params)
                 if res.status_code == 200:
                     league_data = res.json()
-                    # Guarda na cache
                     api_cache[sport_key] = {'data': league_data, 'ts': current_time}
                 else:
                     print(f"❌ Erro API {sport_key}: {res.status_code}")
 
-            # 3. Processar jogos e filtrar pela DATA pedida
+            # 3. Processar
             for game in league_data:
-                # A API devolve datas assim: "2025-12-12T20:00:00Z"
-                # Convertemos para YYYY-MM-DD
                 game_date = game['commence_time'].split('T')[0]
                 
                 if game_date == target_date_str:
-                    # Extrair Odds (se houver) para mostrar logo na cache depois
                     odds_h, odds_d, odds_a = 0, 0, 0
                     bookmakers = game.get('bookmakers', [])
                     if bookmakers:
-                        # Tenta usar a primeira casa disponível
                         markets = bookmakers[0].get('markets', [])
                         if markets:
                             outcomes = markets[0].get('outcomes', [])
@@ -145,9 +134,8 @@ def get_fixtures():
                                 elif out['name'] == game['away_team']: odds_a = out['price']
                                 elif out['name'] == 'Draw': odds_d = out['price']
 
-                    # Constrói o objeto igual ao que o Frontend espera
                     all_matches.append({
-                        'id': game['id'], # ID único da nova API
+                        'id': game['id'], 
                         'home_team': normalize_name(game['home_team']),
                         'away_team': normalize_name(game['away_team']),
                         'division': MODEL_DIV_MAP.get(sport_key, 'E0'),
@@ -156,7 +144,7 @@ def get_fixtures():
                         'match_time': game['commence_time'].split('T')[1][:5],
                         'homeTeam': normalize_name(game['home_team']),
                         'awayTeam': normalize_name(game['away_team']),
-                        'status_short': 'NS' # Assumimos Not Started
+                        'status_short': 'NS' 
                     })
 
         all_matches.sort(key=lambda x: x['match_time'])
@@ -169,13 +157,10 @@ def get_fixtures():
 
 @app.route('/api/odds', methods=['POST'])
 def get_odds():
-    # Com esta nova API, as odds já foram carregadas no 'get_fixtures' e estão na cache!
-    # Só precisamos de ir buscá-las à memória.
     try:
         data = request.get_json()
         fid = data.get('fixture_id')
         
-        # Procura o jogo em TODAS as caches de ligas
         found_game = None
         for sport_key in api_cache:
             for game in api_cache[sport_key]['data']:
@@ -187,12 +172,10 @@ def get_odds():
         if not found_game:
             return jsonify({"error": "Odds não encontradas (Tente recarregar)"})
 
-        # Extrair Odds do jogo encontrado
         odds = {'h': 0, 'd': 0, 'a': 0}
         bookmakers = found_game.get('bookmakers', [])
         
         if bookmakers:
-            # Tenta encontrar uma casa conhecida ou usa a primeira
             target_bookie = next((b for b in bookmakers if 'Betclic' in b['title']), None)
             if not target_bookie: target_bookie = bookmakers[0]
             
@@ -206,7 +189,7 @@ def get_odds():
 
         return jsonify({
             'odd_h': odds['h'], 'odd_d': odds['d'], 'odd_a': odds['a'],
-            'odd_1x': 0, 'odd_12': 0, 'odd_x2': 0 # API Grátis não dá DC, fica a 0 (manual)
+            'odd_1x': 0, 'odd_12': 0, 'odd_x2': 0 
         })
 
     except Exception as e:
@@ -227,7 +210,6 @@ def predict():
         
         input_data = {}
         
-        # Função auxiliar "Last 5"
         def get_latest_stats(team_name):
             if 'Team' not in df_ready.columns: 
                 return {f: df_ready[f].mean() if f in df_ready.columns else 0 for f in features}
@@ -287,6 +269,12 @@ def predict():
                     best_prob = p; best_score = f"{h} - {a}"
             score_matrix.append(row)
 
+        # --- CALCULO AMBAS MARCAM (BTTS) ---
+        # Probabilidade de (Home > 0) * Probabilidade de (Away > 0)
+        prob_home_scores = 1 - poisson.pmf(0, exp_h)
+        prob_away_scores = 1 - poisson.pmf(0, exp_a)
+        prob_btts = prob_home_scores * prob_away_scores
+
         opportunities = [] 
         def add(name, odd, prob):
             if not odd or odd <= 1: return
@@ -319,6 +307,7 @@ def predict():
         return jsonify({
             'home': home, 'away': away,
             'xg': {'home': f"{exp_h:.2f}", 'away': f"{exp_a:.2f}"},
+            'btts': f"{prob_btts:.1%}", # <--- NOVA ESTATÍSTICA AQUI
             'score': {'placar': best_score, 'prob': f"{best_prob:.1%}"},
             'matrix': score_matrix, 
             'scanner': opportunities,
