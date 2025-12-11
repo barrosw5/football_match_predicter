@@ -187,30 +187,56 @@ document.addEventListener('DOMContentLoaded', () => {
             const generateMatrixHTML = (matrix) => {
                 let html = '<div class="score-matrix">';
                 
-                // Cabeçalho (Golos Fora - Visitante)
-                html += '<div class="matrix-header"></div>'; 
-                for(let a=0; a<6; a++) html += `<div class="matrix-header">${a}</div>`;
+                // 1. Calcular o valor máximo para fazer a escala de cores relativa
+                const maxVal = Math.max(...matrix.flat());
+
+                // 2. Gerar as Células (Golos Casa vs Fora)
+                // Nota: Removemos o cabeçalho daqui do topo
                 
-                // Linhas (Golos Casa - Visitado)
                 for(let h=5; h>=0; h--) {
+                    // Etiqueta do Eixo Y (Equipa da Casa)
                     html += `<div class="matrix-row-label">${h}</div>`;
+                    
                     for(let a=0; a<6; a++) {
                         const prob = matrix[h][a];
                         const perc = (prob * 100).toFixed(1);
                         
-                        let bgClass = "bg-low";
-                        if(prob > 0.15) bgClass = "bg-high";
-                        else if(prob > 0.08) bgClass = "bg-med";
+                        // CÁLCULO DO DEGRADÊ (COR DINÂMICA)
+                        // Calcula a intensidade de 0 a 1 baseada no valor máximo
+                        const intensity = prob / maxVal; 
                         
-                        const maxVal = Math.max(...matrix.flat());
+                        // Define a cor (Verde Esmeralda: 16, 185, 129).
+                        // A opacidade (alpha) vai de 0.10 (mínimo) até 0.95 (máximo)
+                        const alpha = 0.1 + (intensity * 0.85);
+                        
+                        // Se a cor for muito escura/transparente, texto cinza. Se for forte, texto branco.
+                        const textColor = intensity > 0.5 ? '#ffffff' : '#94a3b8';
+                        
                         const isBest = prob === maxVal;
-                        const borderClass = isBest ? "matrix-best" : "";
+                        const borderStyle = isBest ? "border: 2px solid #fbbf24;" : "";
+                        const transformStyle = isBest ? "transform: scale(1.1); z-index: 10;" : "";
 
-                        html += `<div class="matrix-cell ${bgClass} ${borderClass}" title="${data.home} ${h} - ${a} ${data.away}">
+                        // Aplicamos o estilo inline para a cor exata
+                        html += `<div class="matrix-cell" 
+                                      title="${data.home} ${h} - ${a} ${data.away}"
+                                      style="background-color: rgba(16, 185, 129, ${alpha}); 
+                                             color: ${textColor}; 
+                                             ${borderStyle} 
+                                             ${transformStyle}">
                                     ${perc}%
                                  </div>`;
                     }
                 }
+
+                // 3. Rodapé (Golos Fora - Visitante) - MOVIDO PARA BAIXO
+                // Célula vazia no canto inferior esquerdo (debaixo dos labels Y)
+                html += '<div></div>'; 
+                
+                // Loop para os números 0 1 2 3 4 5
+                for(let a=0; a<6; a++) {
+                    html += `<div class="matrix-header" style="padding-top: 5px;">${a}</div>`;
+                }
+                
                 html += '</div>';
                 return html;
             };
