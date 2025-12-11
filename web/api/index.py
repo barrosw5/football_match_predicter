@@ -17,7 +17,10 @@ LEAGUE_MAP = {
     39: 'E0', 78: 'D1', 140: 'SP1', 61: 'F1', 135: 'I1',
     40: 'E1', 79: 'D2', 141: 'SP2', 62: 'F2', 136: 'I2',
     94: 'P1', 88: 'N1', 144: 'B1', 203: 'T1', 197: 'G1', 179: 'SC0',
-    2: 'CL'
+    2: 'CL',
+    # --- NOVAS LIGAS EUROPEIAS ---
+    3: 'CL',   # Liga Europa (Mapeada como Champions League)
+    848: 'CL'  # Liga Conferência (Mapeada como Champions League)
 }
 
 # --- CARREGAMENTO ---
@@ -50,33 +53,57 @@ else:
 def get_fixtures():
     try:
         data = request.get_json()
+        # URL da API
         url = "https://v3.football.api-sports.io/fixtures"
-        params = {'date': data.get('date'), 'status': 'NS'}
+        
+        # 1. Pedimos jogos por DATA (sem filtrar status, para apanhar tudo)
+        params = {'date': data.get('date')}
         headers = {'x-rapidapi-key': API_KEY, 'x-rapidapi-host': "v3.football.api-sports.io"}
 
+        print(f"📡 A pedir jogos à API para data: {data.get('date')}...")
         response = requests.get(url, headers=headers, params=params)
+        
+        if response.status_code != 200:
+            print(f"❌ Erro API Status: {response.status_code}")
+            return jsonify([])
+
         fixtures_data = response.json().get('response', [])
+        total_games = len(fixtures_data)
+        
+        print(f"📦 Jogos recebidos da API (total): {total_games}")
+        
         supported_matches = []
 
+        # 2. FILTRAGEM ESTRITA COM DEBUG
         for f in fixtures_data:
             lid = f['league']['id']
+            lname = f['league']['name'] # Nome da liga para visualizarmos
+            
             if lid in LEAGUE_MAP:
                 supported_matches.append({
                     'home_team': f['teams']['home']['name'],
                     'away_team': f['teams']['away']['name'],
                     'division': LEAGUE_MAP[lid],
-                    'league_name': f['league']['name'], 
+                    'league_name': lname, 
                     'country': f['league']['country'],
                     'match_time': f['fixture']['date'].split('T')[1][:5],
                     'homeTeam': f['teams']['home']['name'],
-                    'awayTeam': f['teams']['away']['name']
+                    'awayTeam': f['teams']['away']['name'],
+                    'status_short': f['fixture']['status']['short']
                 })
-        
+            else:
+                # 🛑 ESTE PRINT VAI MOSTRAR O QUE ESTÁ A SER IGNORADO
+                print(f"⚠️ IGNORADO: ID {lid} - {lname} ({f['league']['country']})")
+
         supported_matches.sort(key=lambda x: (x['league_name'], x['match_time']))
+        
+        print(f"✅ Jogos processados: {total_games} recebidos -> {len(supported_matches)} suportados pelo modelo.")
+        
         return jsonify(supported_matches)
 
     except Exception as e:
-        print(f"❌ Erro API: {e}")
+        print(f"❌ Erro API Crítico: {e}")
+        traceback.print_exc()
         return jsonify([])
 
 @app.route('/api/predict', methods=['POST'])
