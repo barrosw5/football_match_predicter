@@ -14,6 +14,10 @@
     --bad-color: #ef4444;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
@@ -192,6 +196,7 @@ input[readonly] {
 }
 
 /* Analyzed State (Side by Side) */
+/* Analyzed State (Side by Side) */
 @media (min-width: 900px) {
     .main-layout.analyzed {
         flex-direction: row;
@@ -205,14 +210,17 @@ input[readonly] {
     .main-layout.analyzed .card {
         flex: 0 0 400px;
         /* Fixed width for input */
-        margin-right: 20px;
+        /* Removed margin-right, gap handles it */
     }
 
     .main-layout.analyzed .result-container {
         flex: 1;
         /* Takes remaining space */
         margin-top: 0;
-        min-width: 500px;
+        min-width: 400px;
+        /* Reduced from 500px to fit better */
+        width: auto;
+        /* Override width: 100% */
         opacity: 0;
         animation: fadeIn 0.5s forwards 0.2s;
         /* Delay fade in */
