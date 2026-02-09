@@ -10,78 +10,84 @@
 <body>
 
 <div class="container">
+    <button id="lang-toggle" class="lang-btn" aria-label="Toggle Language">
+        <span class="lang-text">PT</span>
+    </button>
+
     <header>
-        <h1><i class="fa-solid fa-robot"></i> AI Football Brain</h1>
-        <p>Previsões baseadas em Machine Learning</p>
+        <h1><i class="fa-solid fa-robot"></i> <span data-i18n="title">AI Football Brain</span></h1>
+        <p data-i18n="subtitle">Prediction powered by Machine Learning</p>
     </header>
 
-    <div class="card">
-        <div class="control-group">
-            <label><i class="fa-regular fa-calendar"></i> Data do Jogo</label>
-            <input type="date" id="match-date">
-            <input type="hidden" id="match-date-hidden">
-        </div>
-
-        <div class="control-group">
-            <label><i class="fa-solid fa-list"></i> Selecionar Jogo (Lista da API)</label>
-            <select id="quick-match">
-                <option value="">A aguardar data...</option>
-            </select>
-        </div>
-
-        <form id="prediction-form">
-            
-            <div class="teams-display">
-                <div class="team-input-group">
-                    <label>Casa</label>
-                    <input type="text" id="input-home" name="home_team" placeholder="Escreve a Equipa">
-                </div>
-                <span class="vs">VS</span>
-                <div class="team-input-group">
-                    <label>Fora</label>
-                    <input type="text" id="input-away" name="away_team" placeholder="Escreve a Equipa">
-                </div>
+    <main class="main-layout" id="main-layout">
+        <div class="card">
+            <div class="control-group">
+                <label><i class="fa-regular fa-calendar"></i> <span data-i18n="match_date">Match Date</span></label>
+                <input type="date" id="match-date">
+                <input type="hidden" id="match-date-hidden">
             </div>
 
-            <hr class="divider">
+            <div class="control-group">
+                <label><i class="fa-solid fa-list"></i> <span data-i18n="select_match">Select Match (API List)</span></label>
+                <select id="quick-match">
+                    <option value="" data-i18n="awaiting_date">Awaiting date...</option>
+                </select>
+            </div>
 
-            <h4 class="section-title"><i class="fa-solid fa-chart-line"></i> Odds da Casa de Apostas</h4>
-            
-            <div class="odds-grid">
-                <div class="odd-group">
-                    <label>Casa (1)</label>
-                    <input type="text" id="odd_h" name="odd_h" placeholder="1.00" inputmode="decimal">
-                </div>
-                <div class="odd-group">
-                    <label>Empate (X)</label>
-                    <input type="text" id="odd_d" name="odd_d" placeholder="1.00" inputmode="decimal">
-                </div>
-                <div class="odd-group">
-                    <label>Fora (2)</label>
-                    <input type="text" id="odd_a" name="odd_a" placeholder="1.00" inputmode="decimal">
-                </div>
+            <form id="prediction-form">
                 
-                <div class="odd-group">
-                    <label>1X</label>
-                    <input type="text" id="odd_1x" name="odd_1x" placeholder="1.00" inputmode="decimal">
+                <div class="teams-display">
+                    <div class="team-input-group">
+                        <label data-i18n="home">Home</label>
+                        <input type="text" id="input-home" name="home_team" placeholder="Type Team Name" data-i18n-placeholder="placeholder_team">
+                    </div>
+                    <span class="vs">VS</span>
+                    <div class="team-input-group">
+                        <label data-i18n="away">Away</label>
+                        <input type="text" id="input-away" name="away_team" placeholder="Type Team Name" data-i18n-placeholder="placeholder_team">
+                    </div>
                 </div>
-                <div class="odd-group">
-                    <label>12</label>
-                    <input type="text" id="odd_12" name="odd_12" placeholder="1.00" inputmode="decimal">
-                </div>
-                <div class="odd-group">
-                    <label>X2</label>
-                    <input type="text" id="odd_x2" name="odd_x2" placeholder="1.00" inputmode="decimal">
-                </div>
-            </div>
 
-            <button type="submit" class="btn-predict">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Analisar Jogo
-            </button>
-        </form>
-    </div>
+                <hr class="divider">
 
-    <div id="result-area" class="result-container"></div>
+                <h4 class="section-title"><i class="fa-solid fa-chart-line"></i> <span data-i18n="bookmaker_odds">Bookmaker Odds</span></h4>
+                
+                <div class="odds-grid">
+                    <div class="odd-group">
+                        <label data-i18n="home_1">Home (1)</label>
+                        <input type="text" id="odd_h" name="odd_h" placeholder="1.00" inputmode="decimal">
+                    </div>
+                    <div class="odd-group">
+                        <label data-i18n="draw_x">Draw (X)</label>
+                        <input type="text" id="odd_d" name="odd_d" placeholder="1.00" inputmode="decimal">
+                    </div>
+                    <div class="odd-group">
+                        <label data-i18n="away_2">Away (2)</label>
+                        <input type="text" id="odd_a" name="odd_a" placeholder="1.00" inputmode="decimal">
+                    </div>
+                    
+                    <div class="odd-group">
+                        <label>1X</label>
+                        <input type="text" id="odd_1x" name="odd_1x" placeholder="1.00" inputmode="decimal">
+                    </div>
+                    <div class="odd-group">
+                        <label>12</label>
+                        <input type="text" id="odd_12" name="odd_12" placeholder="1.00" inputmode="decimal">
+                    </div>
+                    <div class="odd-group">
+                        <label>X2</label>
+                        <input type="text" id="odd_x2" name="odd_x2" placeholder="1.00" inputmode="decimal">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-predict">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="analyze_btn">Analyze Match</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="result-area" class="result-container"></div>
+    </main>
 </div>
 
 <script src="script.js"></script>

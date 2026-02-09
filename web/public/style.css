@@ -150,6 +150,64 @@ input[readonly] {
     background-color: var(--primary-hover);
 }
 
+/* Language Toggle */
+.lang-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    z-index: 100;
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Main Layout Wrapper */
+.main-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    transition: all 0.5s ease-in-out;
+}
+
+/* Analyzed State (Side by Side) */
+@media (min-width: 900px) {
+    .main-layout.analyzed {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+        max-width: 1200px; /* Wider container */
+        margin: 0 auto;
+    }
+
+    .main-layout.analyzed .card {
+        flex: 0 0 400px; /* Fixed width for input */
+        margin-right: 20px;
+    }
+
+    .main-layout.analyzed .result-container {
+        flex: 1; /* Takes remaining space */
+        margin-top: 0;
+        min-width: 500px;
+        opacity: 0;
+        animation: fadeIn 0.5s forwards 0.2s; /* Delay fade in */
+    }
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
 /* Área de Resultados */
 .result-container {
     margin-top: 20px;
@@ -157,7 +215,13 @@ input[readonly] {
     border-radius: 12px;
     padding: 20px;
     border: 1px solid var(--border-color);
-    display: empty; 
+    display: none; /* Hidden by default until results arrive */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.result-container:not(:empty) {
+    display: block;
 }
 
 .result-container h3 {
