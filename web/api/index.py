@@ -96,8 +96,9 @@ if os.path.exists(model_path):
         xgb_goals_a = artifacts.get('xgb_goals_a') or artifacts.get('model_goals_a')
         le_div = artifacts.get('le_div')
         features = artifacts.get('features')
-        current_elos = artifacts.get('current_elos', {})
-        df_ready = artifacts.get('df_ready', pd.DataFrame())
+        # Tenta carregar com keys antigas ou novas
+        current_elos = artifacts.get('current_elos') or artifacts.get('elos', {})
+        df_ready = artifacts.get('df_ready') or artifacts.get('history_df', pd.DataFrame())
         print("✅ MODELOS CARREGADOS!")
     except Exception as e:
         print(f"❌ ERRO CRÍTICO MODELO: {e}")
