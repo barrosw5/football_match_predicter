@@ -265,6 +265,22 @@ def load_current(
 # Line-ups are fetched for these competitions only (one request per match).
 LINEUP_COMPETITIONS = ("E0", "SP1", "D1", "I1", "F1", "P1", "N1", "CL", "EL", "ECL", "PTC")
 
+SUMMARY_VERSION = 2  # bump to re-download cached summaries after a parser change
+
+_PLAYER_STATS = {
+    "goals": "totalGoals",
+    "assists": "goalAssists",
+    "shots": "totalShots",
+    "sot": "shotsOnTarget",
+    "fouls": "foulsCommitted",
+    "fouled": "foulsSuffered",
+    "offsides": "offsides",
+    "yellow": "yellowCards",
+    "red": "redCards",
+    "saves": "saves",
+    "conceded": "goalsConceded",
+}
+
 _EVENT_TYPES = {
     "Goal": "goal",
     "Goal - Header": "goal",
@@ -286,6 +302,7 @@ def _parse_summary(data: dict, home_id: str) -> dict:
         formations[side] = roster.get("formation")
         for p in roster.get("roster") or []:
             athlete = p.get("athlete") or {}
+            raw = {st.get("name"): st.get("value") or 0 for st in p.get("stats") or []}
             lineups[side].append(
                 {
                     "id": str(athlete.get("id", "")) or None,
@@ -298,6 +315,7 @@ def _parse_summary(data: dict, home_id: str) -> dict:
                     "starter": bool(p.get("starter")),
                     "subIn": bool(p.get("subbedIn")),
                     "subOut": bool(p.get("subbedOut")),
+                    "stats": {k: int(raw[n]) for k, n in _PLAYER_STATS.items() if n in raw},
                 }
             )
     events = []
@@ -316,7 +334,7 @@ def _parse_summary(data: dict, home_id: str) -> dict:
                 "other": names[1] if len(names) > 1 else None,  # assist, or player replaced
             }
         )
-    return {"formations": formations, "lineups": lineups, "events": events}
+    return {"v": SUMMARY_VERSION, "formations": formations, "lineups": lineups, "events": events}
 
 
 def load_summaries(events: pd.DataFrame, *, max_new: int = 150) -> dict[str, dict]:
@@ -333,8 +351,10 @@ def load_summaries(events: pd.DataFrame, *, max_new: int = 150) -> dict[str, dic
     for row in wanted.itertuples():
         path = cache_dir / f"{row.espn_id}.json"
         if path.exists():
-            out[row.espn_id] = json.loads(path.read_text(encoding="utf-8"))
-            continue
+            cached = json.loads(path.read_text(encoding="utf-8"))
+            if cached.get("v") == SUMMARY_VERSION or fetched >= max_new:
+                out[row.espn_id] = cached
+                continue
         if fetched >= max_new:
             continue
         slug = competition(row.competition).espn
@@ -440,3 +460,28 @@ def load_rosters(teams: dict[str, str]) -> dict[str, list[dict]]:
         path.write_text(json.dumps(players, ensure_ascii=False), encoding="utf-8")
         out[team_id] = players
     return out
+
+
+def load_competition_logos() -> dict[str, str]:
+    """Competition code -> logo URL (from each scoreboard's league block), cached for 30 days."""
+    import time as _time
+
+    path = RAW_DIR / "espn_logos.json"
+    if path.exists() and _time.time() - path.stat().st_mtime < 30 * 86400:
+        return json.loads(path.read_text(encoding="utf-8"))
+    logos: dict[str, str] = {}
+    for comp in COMPETITIONS:
+        try:
+            data = get(f"{BASE_URL}/{comp.espn}/scoreboard", timeout=60).json()
+        except Exception as exc:
+            log.warning("ESPN logo %s unavailable: %s", comp.code, exc)
+            continue
+        league = (data.get("leagues") or [{}])[0]
+        hrefs = [lg.get("href") for lg in league.get("logos") or [] if lg.get("href")]
+        if not hrefs and league.get("id"):
+            hrefs = [f"https://a.espncdn.com/i/leaguelogos/soccer/500/{league['id']}.png"]
+        if hrefs:
+            logos[comp.code] = hrefs[0]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(logos), encoding="utf-8")
+    return logos

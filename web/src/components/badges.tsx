@@ -1,4 +1,6 @@
 import { competitionName, countryName, T } from "@/lib/i18n";
+
+import { CompetitionLogo } from "./competition-picker";
 import type { Competition } from "@/lib/types";
 
 export function CompetitionTag({ competition, full = false }: { competition: Competition; full?: boolean }) {
@@ -8,6 +10,7 @@ export function CompetitionTag({ competition, full = false }: { competition: Com
   };
   return (
     <span className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-ink-2">
+      {competition.logo && <CompetitionLogo src={competition.logo} size={14} />}
       <T en={label("en")} pt={label("pt")} />
     </span>
   );

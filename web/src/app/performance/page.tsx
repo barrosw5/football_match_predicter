@@ -5,7 +5,7 @@ import { getMeta, getPerformance } from "@/lib/data";
 import { T } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Track record",
+  title: "AI track record",
   description: "How many matches the model got right in the last week, month and quarter, and by how much it missed.",
 };
 
@@ -16,7 +16,7 @@ export default function PerformancePage() {
     <>
       <section className="py-8 md:py-10">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          <T en="Track record" pt="Histórico de previsões" />
+          <T en="AI track record" pt="Histórico da IA" />
         </h1>
         <p className="mt-3 max-w-2xl text-ink-2 text-pretty">
           <T

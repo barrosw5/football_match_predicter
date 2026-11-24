@@ -39,7 +39,10 @@ def _cmd_train(args: argparse.Namespace) -> None:
     from .pipeline import train_model
 
     matches = load_matches()
-    frame, _ = build_features(matches)
+    from .sources.transfermarkt import squad_value_history
+
+    history = squad_value_history(matches)
+    frame, _ = build_features(matches, squad_values=history)
     rows = training_rows(frame)
     cutoff = rows["date"].max() - pd.Timedelta(days=args.holdout_days)
     train, test = rows[rows["date"] <= cutoff], rows[rows["date"] > cutoff]
@@ -58,7 +61,7 @@ def _cmd_train(args: argparse.Namespace) -> None:
         {k: round(v, 4) for k, v in ev.summarise(probs[mask], y[mask]).items()},
         "(* same matches as market)",
     )
-    train_model(matches)
+    train_model(matches, history)
     print("Model retrained on all data and saved.")
 
 

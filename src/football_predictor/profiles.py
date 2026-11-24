@@ -11,6 +11,7 @@ import pandas as pd
 
 from .dataset import _slug, match_key
 from .ranking import elo_timeline
+from .sources.transfermarkt import lookup_player_value
 
 
 def team_slug(team: str) -> str:
@@ -67,6 +68,8 @@ def _appearances(
                         "red": any(
                             e["type"] == "red" and e.get("player") == name for e in team_events
                         ),
+                        "shots": (p.get("stats") or {}).get("shots"),
+                        "sot": (p.get("stats") or {}).get("sot"),
                     }
                 )
     for games in out.values():
@@ -89,6 +92,7 @@ def build_profiles(
     team_ids: dict[str, str],
     now: pd.Timestamp,
     published_ids: set[str],
+    player_values: dict | None = None,
 ) -> tuple[dict[str, dict], dict[str, dict]]:
     """Return ``(teams, players)``: team slug -> profile, ESPN athlete id -> profile."""
     ranked = {r["key"]: r for r in ranking}
@@ -190,6 +194,7 @@ def build_profiles(
             squad.append({**p, "goals": goals, "assists": assists, "apps": len(apps)})
             players[p["id"]] = {
                 **p,
+                "value": lookup_player_value(player_values or {}, key, p["name"]),
                 "team": {"slug": slug, "name": r["name"], "logo": r["logo"]},
                 "season": {
                     "goals": stats.get("goals") or {},
@@ -232,3 +237,66 @@ def build_profiles(
             "squad": squad,
         }
     return teams, players
+
+
+STAT_KEYS = (
+    "goals",
+    "assists",
+    "shots",
+    "sot",
+    "fouls",
+    "fouled",
+    "offsides",
+    "yellow",
+    "red",
+    "saves",
+)
+
+
+def players_table(
+    summaries: dict[str, dict] | None,
+    events: pd.DataFrame | None,
+    now: pd.Timestamp,
+    team_slugs: dict[str, str],
+    player_values: dict | None = None,
+) -> dict:
+    """Season totals per player and competition, from the line-ups of this season's matches."""
+    if not summaries or events is None or events.empty:
+        return {"season": None, "competitions": {}}
+    today = pd.Timestamp(now).tz_convert("UTC").tz_localize(None)
+    start = pd.Timestamp(year=today.year if today.month >= 7 else today.year - 1, month=7, day=1)
+    ev = events[events["espn_id"].isin(summaries) & (events["date"] >= start)]
+    table: dict[str, dict[str, dict]] = {}
+    for r in ev.itertuples():
+        s = summaries[r.espn_id]
+        for side in ("home", "away"):
+            club = getattr(r, f"{side}_team")
+            for p in s["lineups"].get(side, []):
+                if not p.get("id") or not (p.get("starter") or p.get("subIn")):
+                    continue
+                row = table.setdefault(r.competition, {}).setdefault(
+                    p["id"],
+                    {
+                        "id": p["id"],
+                        "name": p["name"],
+                        "pos": p.get("pos"),
+                        "team": getattr(r, f"{side}_espn"),
+                        "teamLogo": str(getattr(r, f"{side}_espn_id")) or None,
+                        "teamSlug": team_slugs.get(club),
+                        "value": lookup_player_value(player_values or {}, club, p["name"]),
+                        "apps": 0,
+                        "starts": 0,
+                        **{k: 0 for k in STAT_KEYS},
+                    },
+                )
+                row["apps"] += 1
+                row["starts"] += int(bool(p.get("starter")))
+                for k in STAT_KEYS:
+                    row[k] += int((p.get("stats") or {}).get(k) or 0)
+    return {
+        "season": f"{start.year}/{(start.year + 1) % 100:02d}",
+        "competitions": {
+            comp: sorted(rows.values(), key=lambda x: (-x["goals"], -x["assists"], x["name"]))
+            for comp, rows in table.items()
+        },
+    }

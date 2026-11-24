@@ -109,7 +109,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
             />
           </section>
 
-          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="mt-4">
             <section className={card}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-semibold">
@@ -135,21 +135,51 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                 </p>
               )}
             </section>
-
-            {s.market && <ModelVsMarket m={s.market} />}
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-            <section className={card}>
-              <h2 className="font-semibold">
-                <T en="By competition" pt="Por competição" />
-              </h2>
-              <p className="mb-4 mt-1 text-sm text-ink-2">
-                <T en="Share of correct picks." pt="Percentagem de previsões certas." />
-              </p>
-              <CompetitionBars rows={s.byCompetition} overall={s.accuracy} />
-            </section>
-
+          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+            <div className="grid content-start gap-4">
+            {s.market && <ModelVsMarket m={s.market} />}
+              <section className={card}>
+                <h2 className="font-semibold">
+                  <T en="Value picks" pt="Apostas de valor" />
+                </h2>
+                <p className="mt-1 text-sm text-ink-2">
+                  <T
+                    en={`A 1-unit bet whenever the model's expected value beat ${pct(valueEdge)} at the quoted odds.`}
+                    pt={`Aposta de 1 unidade sempre que o valor esperado do modelo superou ${pct(valueEdge)} às odds oferecidas.`}
+                  />
+                </p>
+                <dl className="tnum mt-4 grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-ink-2">
+                      <T en="Bets" pt="Apostas" />
+                    </dt>
+                    <dd className="text-lg font-semibold">{int(s.value?.bets)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-ink-2">
+                      <T en="Won" pt="Ganhas" />
+                    </dt>
+                    <dd className="text-lg font-semibold">{int(s.value?.won)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-ink-2">
+                      <T en="Return" pt="Retorno" />
+                    </dt>
+                    <dd className="text-lg font-semibold">
+                      {s.value?.roi === null ? "–" : signed((s.value?.roi ?? 0) * 100, 1, "%")}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-xs leading-5 text-ink-2">
+                  <T
+                    en="Bookmaker prices are hard to beat: when the model disagrees strongly with them, the market is usually right. Reported as-is."
+                    pt="É difícil bater as odds das casas: quando o modelo discorda muito delas, normalmente são as casas que têm razão. Mostrado tal como é."
+                  />
+                </p>
+              </section>
+            </div>
             <div className="grid content-start gap-4">
               <section className={card}>
                 <h2 className="font-semibold">
@@ -195,7 +225,6 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                   </tbody>
                 </table>
               </section>
-
               <section className={card}>
                 <h2 className="font-semibold">
                   <T en="Are the probabilities honest?" pt="As probabilidades são fiáveis?" />
@@ -208,47 +237,19 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                 </p>
                 <CalibrationChart bins={s.calibration} />
               </section>
-
-              <section className={card}>
-                <h2 className="font-semibold">
-                  <T en="Value picks" pt="Apostas de valor" />
-                </h2>
-                <p className="mt-1 text-sm text-ink-2">
-                  <T
-                    en={`A 1-unit bet whenever the model's expected value beat ${pct(valueEdge)} at the quoted odds.`}
-                    pt={`Aposta de 1 unidade sempre que o valor esperado do modelo superou ${pct(valueEdge)} às odds oferecidas.`}
-                  />
-                </p>
-                <dl className="tnum mt-4 grid grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <dt className="text-xs text-ink-2">
-                      <T en="Bets" pt="Apostas" />
-                    </dt>
-                    <dd className="text-lg font-semibold">{int(s.value?.bets)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-ink-2">
-                      <T en="Won" pt="Ganhas" />
-                    </dt>
-                    <dd className="text-lg font-semibold">{int(s.value?.won)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-ink-2">
-                      <T en="Return" pt="Retorno" />
-                    </dt>
-                    <dd className="text-lg font-semibold">
-                      {s.value?.roi === null ? "–" : signed((s.value?.roi ?? 0) * 100, 1, "%")}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="mt-3 text-xs leading-5 text-ink-2">
-                  <T
-                    en="Bookmaker prices are hard to beat: when the model disagrees strongly with them, the market is usually right. Reported as-is."
-                    pt="É difícil bater as odds das casas: quando o modelo discorda muito delas, normalmente são as casas que têm razão. Mostrado tal como é."
-                  />
-                </p>
-              </section>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <section className={card}>
+              <h2 className="font-semibold">
+                <T en="By competition" pt="Por competição" />
+              </h2>
+              <p className="mb-4 mt-1 text-sm text-ink-2">
+                <T en="Share of correct picks." pt="Percentagem de previsões certas." />
+              </p>
+              <CompetitionBars rows={s.byCompetition} overall={s.accuracy} />
+            </section>
           </div>
         </>
       )}

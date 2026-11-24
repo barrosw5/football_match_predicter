@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 BASE_URL = "https://pub-e682421888d945d684bcae8890b0ec20.r2.dev/data"
 FILES = ("games", "player_valuations", "competitions")
+PLAYER_FILE = "players"
 REFRESH_DAYS = 7
 
 _TM_COUNTRY = {"Türkiye": "Turkey"}
@@ -79,22 +80,23 @@ def club_map(
     return mapping
 
 
-def squad_values(matches: pd.DataFrame, every_months: int = 6, years: int = 6) -> dict[str, dict]:
-    """Canonical club -> latest squad value and its history (EUR millions).
+_SERIES_CACHE: dict = {}
 
-    A snapshot at date D sums each player's most recent valuation in the 12 months before D,
-    under the club he was at when valued (older valuations = retired / unknown players).
-    """
+
+def _club_series(matches: pd.DataFrame, every_months: int = 6, years: int = 10):
+    """(canonical club -> [(snapshot date, EUR millions)], last snapshot date)."""
+    key = (len(matches), every_months, years)
+    if key in _SERIES_CACHE:
+        return _SERIES_CACHE[key]
     try:
         games, valuations, competitions = (load(n) for n in FILES)
     except Exception as exc:  # optional data: never break the pipeline
         log.warning("Transfermarkt data unavailable: %s", exc)
-        return {}
+        return {}, None
     if valuations.empty or games.empty:
-        return {}
+        return {}, None
     mapping = club_map(matches, games, competitions)
     log.info("Transfermarkt: %d clubs linked through matching games", len(mapping))
-
     valuations["date"] = pd.to_datetime(valuations["date"])
     valuations = valuations[valuations["current_club_id"].isin(mapping)]
     last = valuations["date"].max().normalize()
@@ -114,10 +116,27 @@ def squad_values(matches: pd.DataFrame, every_months: int = 6, years: int = 6) -
         totals = latest.groupby("current_club_id")["market_value_in_eur"].sum() / 1e6
         for club_id, value in totals.items():
             per_club.setdefault(mapping[int(club_id)], []).append((when, float(value)))
+    for series in per_club.values():
+        series.sort()
+    _SERIES_CACHE[key] = (per_club, last)
+    return per_club, last
 
+
+def squad_value_history(matches: pd.DataFrame) -> dict[str, list[tuple]]:
+    """Every club's squad value snapshots (used as a model feature, no look-ahead)."""
+    per_club, _ = _club_series(matches)
+    return per_club
+
+
+def squad_values(matches: pd.DataFrame) -> dict[str, dict]:
+    """Canonical club -> latest squad value and its history (EUR millions), for the website.
+
+    A snapshot at date D sums each player's most recent valuation in the 12 months before D,
+    under the club he was at when valued (older valuations = retired / unknown players).
+    """
+    per_club, last = _club_series(matches)
     out = {}
     for team, series in per_club.items():
-        series.sort()
         when, value = series[-1]
         if when != last:
             continue  # no current squad: club left the covered leagues
@@ -126,6 +145,51 @@ def squad_values(matches: pd.DataFrame, every_months: int = 6, years: int = 6) -
             "value": round(value, 1),
             "date": f"{last:%Y-%m-%d}",
             "change12m": round(value - year_ago[-1], 1) if year_ago else None,
-            "history": [{"date": f"{d:%Y-%m-%d}", "value": round(v, 1)} for d, v in series],
+            "history": [{"date": f"{d:%Y-%m-%d}", "value": round(v, 1)} for d, v in series[-13:]],
         }
     return out
+
+
+def _name_key(name: str) -> str:
+    from ..teams import strip_accents
+
+    return " ".join(strip_accents(str(name)).lower().replace("-", " ").split())
+
+
+def player_values(matches: pd.DataFrame) -> dict[tuple[str, str], float]:
+    """(canonical club, player name key) -> latest market value in EUR millions.
+
+    Also keyed by (club, last name) when that last name is unique in the squad, because
+    ESPN and Transfermarkt often spell first names differently.
+    """
+    try:
+        games, competitions, players = load("games"), load("competitions"), load(PLAYER_FILE)
+    except Exception as exc:
+        log.warning("Transfermarkt players unavailable: %s", exc)
+        return {}
+    if players.empty:
+        return {}
+    mapping = club_map(matches, games, competitions)
+    players = players[
+        players["current_club_id"].isin(mapping) & players["market_value_in_eur"].notna()
+    ]
+    players = players[players["last_season"] >= players["last_season"].max() - 1]
+    out: dict[tuple[str, str], float] = {}
+    for club_id, squad in players.groupby("current_club_id"):
+        club = mapping[int(club_id)]
+        last_names = squad["name"].map(lambda n: _name_key(n).split(" ")[-1])
+        unique_last = last_names.value_counts()
+        for name, last, value in zip(
+            squad["name"], last_names, squad["market_value_in_eur"], strict=False
+        ):
+            out[(club, _name_key(name))] = round(float(value) / 1e6, 2)
+            if unique_last[last] == 1:
+                out[(club, "~" + last)] = round(float(value) / 1e6, 2)
+    return out
+
+
+def lookup_player_value(values: dict, club: str, name: str) -> float | None:
+    key = _name_key(name)
+    if (club, key) in values:
+        return values[(club, key)]
+    return values.get((club, "~" + key.split(" ")[-1]))

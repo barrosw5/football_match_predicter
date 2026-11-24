@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { num, pct } from "@/lib/format";
-import { competitionName, countryName, LocalDate, OutcomeName, T, tr } from "@/lib/i18n";
+import { competitionName, LocalDate, OutcomeName, T } from "@/lib/i18n";
 import type { Result } from "@/lib/types";
-import { useLang } from "@/lib/use-lang";
 
 import { SourceTag, Verdict } from "./badges";
+import { CompetitionPicker } from "./competition-picker";
 import { TeamLogo } from "./team-logo";
 
 const PAGE = 25;
@@ -22,7 +22,6 @@ const FILTERS = [
 
 /** Every settled forecast, loaded on demand from the static results.json. */
 export function ResultsTable({ days, generatedAt }: { days: number | null; generatedAt: string }) {
-  const lang = useLang();
   const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState<"all" | "correct" | "missed">("all");
@@ -89,22 +88,14 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
             </button>
           ))}
         </div>
-        <select
-          aria-label={tr(lang, "Competition", "Competição")}
+        <CompetitionPicker
+          competitions={competitions}
           value={competition}
-          onChange={(e) => {
-            setCompetition(e.target.value);
+          onChange={(c) => {
+            setCompetition(c);
             setPage(0);
           }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
-        >
-          <option value="">{tr(lang, "Every competition", "Todas as competições")}</option>
-          {competitions.map((c) => (
-            <option key={c.code} value={c.code}>
-              {countryName(c.country, lang)} · {competitionName(c.code, c.name, lang)}
-            </option>
-          ))}
-        </select>
+        />
         <span className="tnum ml-auto text-sm text-ink-3">
           {rows.length} <T en="forecasts" pt="previsões" />
         </span>

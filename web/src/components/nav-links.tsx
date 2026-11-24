@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/", en: "Fixtures", pt: "Jogos" },
   { href: "/ranking/", en: "Ranking", pt: "Ranking" },
   { href: "/players/", en: "Players", pt: "Jogadores" },
-  { href: "/performance/", en: "Track record", pt: "Histórico" },
+  { href: "/performance/", en: "AI record", pt: "Histórico IA" },
   { href: "/methodology/", en: "How it works", pt: "Como funciona" },
 ];
 

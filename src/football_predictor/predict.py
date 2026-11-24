@@ -72,7 +72,10 @@ def prepare_fixtures(
 
 
 def predict_fixtures(
-    model: MatchModel, matches: pd.DataFrame, fixtures: pd.DataFrame
+    model: MatchModel,
+    matches: pd.DataFrame,
+    fixtures: pd.DataFrame,
+    squad_values: dict | None = None,
 ) -> pd.DataFrame:
     """Predictions for ``fixtures`` using features built from all of ``matches``."""
     if fixtures.empty:
@@ -92,6 +95,7 @@ def predict_fixtures(
                 "odds_source",
             ]
         ),
+        squad_values=squad_values,
     )
     frame = frame[frame["status"].eq("scheduled")].set_index("match_id")
     preds = model.predict(frame)

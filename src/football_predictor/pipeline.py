@@ -34,7 +34,7 @@ from .export import export_site_data
 from .features import build_features
 from .model import MatchModel, training_rows
 from .predict import predict_fixtures, prepare_fixtures
-from .sources import espn, football_data
+from .sources import espn, football_data, transfermarkt
 from .teams import TeamMatcher
 from .tracking import LEDGER_COLUMNS, load_ledger, save_ledger, settle, upsert_predictions
 
@@ -119,8 +119,8 @@ def load_live_context(today: date, *, refresh: bool = True) -> LiveContext:
     )
 
 
-def train_model(matches: pd.DataFrame) -> MatchModel:
-    frame, _ = build_features(matches)
+def train_model(matches: pd.DataFrame, squad_values: dict | None = None) -> MatchModel:
+    frame, _ = build_features(matches, squad_values=squad_values)
     train = training_rows(frame)
     log.info("Training on %d matches", len(train))
     model = MatchModel().fit(train)
@@ -136,13 +136,14 @@ def backtest(
     display: dict[str, str],
     team_ids: dict[str, str] | None = None,
     step_days: int = 7,
+    squad_values: dict | None = None,
 ) -> pd.DataFrame:
     """Walk-forward forecasts for the last ``days`` days, refitting every ``step_days``.
 
     Each block is predicted by a model trained only on matches played before the block
     starts, exactly as the live pipeline would have done.
     """
-    frame, _ = build_features(matches)
+    frame, _ = build_features(matches, squad_values=squad_values)
     rows = training_rows(frame)
     start = (now - pd.Timedelta(days=days)).tz_localize(None).normalize()
     end = now.tz_localize(None).normalize()
@@ -201,7 +202,8 @@ def run(*, today: date | None = None, refresh: bool = True, backtest_days: int =
     today = today or now.date()
     ctx = load_live_context(today, refresh=refresh)
 
-    model = train_model(ctx.matches)
+    value_history = transfermarkt.squad_value_history(ctx.matches)
+    model = train_model(ctx.matches, value_history)
     model_version = model.metadata["version"]
 
     ledger = load_ledger()
@@ -213,11 +215,18 @@ def run(*, today: date | None = None, refresh: bool = True, backtest_days: int =
 
     fixtures = prepare_fixtures(window, ctx.matcher, football_data.load_fixture_odds(), now)
     log.info("%d upcoming fixtures in the next %d days", len(fixtures), FIXTURE_DAYS_AHEAD)
-    preds = predict_fixtures(model, ctx.matches, fixtures)
+    preds = predict_fixtures(model, ctx.matches, fixtures, value_history)
     ledger = upsert_predictions(ledger, preds, now, model_version)
 
     if backtest_days > 0:
-        bt = backtest(ctx.matches, backtest_days, now, ctx.display_names, ctx.team_ids)
+        bt = backtest(
+            ctx.matches,
+            backtest_days,
+            now,
+            ctx.display_names,
+            ctx.team_ids,
+            squad_values=value_history,
+        )
         first_live = ledger.loc[ledger["source"] == "live", "kickoff"].min()
         if pd.notna(first_live):
             bt = bt[bt["kickoff"] < first_live.normalize()]

@@ -39,7 +39,8 @@ the forecasts, together with a **public, tamper-proof track record of every pred
   previous starting XI before a fixture.
 - **Team and player pages.** Every ranked club has a page with its full match history since 2014, upcoming forecasts,
   how the model did on its games, Elo and squad-value charts and the current squad; every player has a page with
-  profile, season goals/assists and a match-by-match log. Top scorers and assists for every competition.
+  profile, market value, season goals/assists and a match-by-match log. A sortable players table (apps, starts, goals,
+  assists, shots, shots on target, fouls, cards, market value) per competition, plus ESPN's season leaders.
 - **Bilingual site** (English / Portuguese) with club crests and a light / dark theme switch.
 
 ## How it works
@@ -76,6 +77,10 @@ flowchart LR
    cup and European games all count, so a Champions League side's midweek fixtures are included), competition
    scoring/draw rates, cup / UEFA flags and margin-free market probabilities. Missing values (no odds for old cup
    games, no xG before 2026) are left as missing and handled natively by XGBoost.
+
+   *Tested and left out:* squad market value at kick-off (log loss 0.9467 with vs 0.9462 without, so no gain once
+   odds and Elo are in). *Not usable:* starting line-ups, which free sources publish only about an hour before
+   kick-off, after the forecasts are made.
 4. **Model** ([`model.py`](src/football_predictor/model.py)). An XGBoost multi-class classifier for 1X2, plus two
    XGBoost Poisson regressors for each side's expected goals. The published 1X2 blends the classifier (70%) with the
    Poisson-implied probabilities (30%). Training samples are weighted with a 4-year half-life.
@@ -224,6 +229,9 @@ Data is used for non-commercial, educational purposes.
   competition.
 
 ## Version history
+
+**v2.2 (2026)**: players table with market values, competition logos and logo picker, collapsible fixture days
+(only the open day is rendered), GitHub icon, rebalanced AI track record page.
 
 **v2.1 (2026)**: domestic cups, club Elo ranking, squad values, team and player pages, line-ups on a pitch,
 top scorers, match statistics card, matches-in-the-last-14-days feature, light / dark theme.

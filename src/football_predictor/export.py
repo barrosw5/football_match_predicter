@@ -18,9 +18,9 @@ from .config import (
 )
 from .dataset import match_key
 from .predict import FormIndex
-from .profiles import build_profiles
+from .profiles import build_profiles, players_table, team_slug
 from .ranking import build_ranking
-from .sources import transfermarkt
+from .sources import espn, transfermarkt
 from .tracking import scored
 
 WINDOWS = {"7d": 7, "30d": 30, "90d": 90, "all": None}
@@ -37,9 +37,12 @@ def _iso(ts) -> str:
     return pd.Timestamp(ts).tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+_LOGOS: dict[str, str] = {}  # competition code -> logo URL, set by export_site_data
+
+
 def _competition(code: str) -> dict:
     c = COMPETITIONS_BY_CODE[code]
-    return {"code": c.code, "name": c.name, "country": c.country}
+    return {"code": c.code, "name": c.name, "country": c.country, "logo": _LOGOS.get(code)}
 
 
 def _odds(row) -> dict | None:
@@ -391,8 +394,15 @@ def export_site_data(
     form = FormIndex(matches, display_names, team_ids)
     try:
         values = transfermarkt.squad_values(matches)
+        player_values = transfermarkt.player_values(matches)
     except Exception:  # optional data
-        values = {}
+        values, player_values = {}, {}
+    try:
+        logos = espn.load_competition_logos()
+    except Exception:
+        logos = {}
+    _LOGOS.clear()
+    _LOGOS.update(logos)
     value_date = next(iter(values.values()))["date"] if values else None
     fixtures = fixtures_payload(ledger, form, now, values)
     results = results_payload(sc, now, values)
@@ -407,7 +417,13 @@ def export_site_data(
             "model": model_meta,
             "valueEdge": VALUE_EDGE,
             "competitions": [
-                {"code": c.code, "name": c.name, "country": c.country, "kind": c.kind}
+                {
+                    "code": c.code,
+                    "name": c.name,
+                    "country": c.country,
+                    "kind": c.kind,
+                    "logo": logos.get(c.code),
+                }
                 for c in COMPETITIONS
             ],
             "counts": {
@@ -458,6 +474,14 @@ def export_site_data(
         team_ids=team_ids or {},
         now=now,
         published_ids={f["id"] for f in fixtures} | {r["id"] for r in results},
+        player_values=player_values,
+    )
+    table = players_table(
+        summaries, espn_events, now, {r["key"]: team_slug(r["key"]) for r in ranking}, player_values
+    )
+    (out_dir / "players-table.json").write_text(
+        json.dumps({"generatedAt": generated, **table}, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
     )
     (build_dir / "teams.json").write_text(
         json.dumps(teams, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"

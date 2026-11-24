@@ -6,6 +6,7 @@ export interface Competition {
   code: string;
   name: string;
   country: string;
+  logo?: string | null;
 }
 
 export interface Probs {
@@ -306,10 +307,41 @@ export interface PlayerAppearance {
   assists: number;
   yellow: boolean;
   red: boolean;
+  shots?: number | null;
+  sot?: number | null;
 }
 
 export interface PlayerProfile extends SquadPlayer {
+  value?: number | null;
   team: { slug: string; name: string; logo: string | null };
   season: { goals: Record<string, number>; assists: Record<string, number> };
   appearances: PlayerAppearance[];
+}
+
+export interface TableRow {
+  id: string;
+  name: string;
+  pos: string | null;
+  team: string;
+  teamLogo: string | null;
+  teamSlug: string | null;
+  value: number | null;
+  apps: number;
+  starts: number;
+  goals: number;
+  assists: number;
+  shots: number;
+  sot: number;
+  fouls: number;
+  fouled: number;
+  offsides: number;
+  yellow: number;
+  red: number;
+  saves: number;
+}
+
+export interface PlayersTable {
+  generatedAt: string;
+  season: string | null;
+  competitions: Record<string, TableRow[]>;
 }

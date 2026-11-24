@@ -62,7 +62,7 @@ export default function HomePage() {
           <T en="No fixtures in the next seven days." pt="Sem jogos nos próximos sete dias." />
         </p>
       ) : (
-        <FixtureBrowser fixtures={fixtures} />
+        <FixtureBrowser fixtures={fixtures} generatedAt={meta.generatedAt} />
       )}
     </>
   );

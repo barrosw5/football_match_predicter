@@ -17,7 +17,7 @@ export function CompetitionBars({ rows, overall }: { rows: WindowStats["byCompet
   };
   return (
     <div>
-      <ul className="space-y-1.5 text-sm">
+      <ul className="grid grid-cols-1 gap-x-10 gap-y-1.5 text-sm lg:grid-cols-2">
         {sorted.map((r) => (
           <li
             key={r.code}

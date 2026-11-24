@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 
 import { dateKey } from "@/lib/format";
-import { competitionName, countryName, LocalDate, T, tr } from "@/lib/i18n";
+import { LocalDate, T, tr } from "@/lib/i18n";
 import type { Fixture } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 
+import { CompetitionPicker } from "./competition-picker";
 import { FixtureRow } from "./fixture-row";
 import { OutcomeLegend } from "./probability-bar";
 
@@ -20,28 +21,37 @@ const GROUPS: Group[] = [
   { id: "pt", en: "Portugal", pt: "Portugal", codes: ["P1", "PTC"] },
 ];
 
-export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
+const WEEK_MS = 7 * 864e5;
+
+export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[]; generatedAt: string }) {
   const lang = useLang();
   const [group, setGroup] = useState("all");
   const [competition, setCompetition] = useState("");
   const [query, setQuery] = useState("");
+  // Only the first day is rendered at first: the others are built when opened.
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  const inWeek = useMemo(() => {
+    const limit = Date.parse(generatedAt) + WEEK_MS;
+    return fixtures.filter((f) => Date.parse(f.kickoff) <= limit);
+  }, [fixtures, generatedAt]);
 
   const competitions = useMemo(() => {
     const seen = new Map<string, Fixture["competition"]>();
-    fixtures.forEach((f) => seen.set(f.competition.code, f.competition));
+    inWeek.forEach((f) => seen.set(f.competition.code, f.competition));
     return [...seen.values()].sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name));
-  }, [fixtures]);
+  }, [inWeek]);
 
   const visible = useMemo(() => {
     const codes = GROUPS.find((g) => g.id === group)?.codes;
     const q = query.trim().toLowerCase();
-    return fixtures.filter(
+    return inWeek.filter(
       (f) =>
         (!codes || codes.includes(f.competition.code)) &&
         (!competition || f.competition.code === competition) &&
         (!q || f.home.name.toLowerCase().includes(q) || f.away.name.toLowerCase().includes(q)),
     );
-  }, [fixtures, group, competition, query]);
+  }, [inWeek, group, competition, query]);
 
   const days = useMemo(() => {
     const map = new Map<string, Fixture[]>();
@@ -53,10 +63,13 @@ export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
     return [...map.entries()];
   }, [visible]);
 
+  const filtering = !!query.trim() || !!competition || group !== "all";
+  const isOpen = (key: string, index: number) => open[key] ?? (filtering || index === 0);
+
   return (
     <section aria-label={tr(lang, "Upcoming fixtures", "Próximos jogos")}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div role="group" className="flex rounded-lg border border-line bg-surface p-0.5">
+        <div role="group" className="flex flex-wrap rounded-lg border border-line bg-surface p-0.5">
           {GROUPS.map((g) => (
             <button
               key={g.id}
@@ -74,22 +87,14 @@ export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
             </button>
           ))}
         </div>
-        <select
-          aria-label={tr(lang, "Competition", "Competição")}
+        <CompetitionPicker
+          competitions={competitions}
           value={competition}
-          onChange={(e) => {
-            setCompetition(e.target.value);
+          onChange={(c) => {
+            setCompetition(c);
             setGroup("all");
           }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
-        >
-          <option value="">{tr(lang, "Every competition", "Todas as competições")}</option>
-          {competitions.map((c) => (
-            <option key={c.code} value={c.code}>
-              {countryName(c.country, lang)} · {competitionName(c.code, c.name, lang)}
-            </option>
-          ))}
-        </select>
+        />
         <input
           type="search"
           aria-label={tr(lang, "Search a team", "Procurar equipa")}
@@ -125,21 +130,42 @@ export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
         </p>
       )}
 
-      <div className="space-y-6">
-        {days.map(([key, list]) => (
-          <div key={key}>
-            <h2 className="mb-2 flex items-baseline justify-between text-sm font-medium text-ink-2">
-              <LocalDate iso={list[0].kickoff} kind="day" />
-              <span className="tnum text-xs text-ink-3">{list.length}</span>
-            </h2>
-            {/* no overflow-hidden: the form tooltips must be able to overlap the row above */}
-            <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
-              {list.map((f) => (
-                <FixtureRow key={f.id} fixture={f} />
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className="space-y-3">
+        {days.map(([key, list], index) => {
+          const expanded = isOpen(key, index);
+          return (
+            <div key={key}>
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => setOpen((o) => ({ ...o, [key]: !expanded }))}
+                className="flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-left text-sm font-medium text-ink-2 hover:text-ink"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                  className={`shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
+                >
+                  <path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <LocalDate iso={list[0].kickoff} kind="day" />
+                <span className="tnum ml-auto text-xs font-normal text-ink-3">
+                  {list.length} <T en="matches" pt="jogos" />
+                </span>
+              </button>
+              {expanded && (
+                // no overflow-hidden: the form tooltips must be able to overlap the row above
+                <ul className="mt-1 divide-y divide-line rounded-xl border border-line bg-surface">
+                  {list.map((f) => (
+                    <FixtureRow key={f.id} fixture={f} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

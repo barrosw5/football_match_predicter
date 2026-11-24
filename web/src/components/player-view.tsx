@@ -60,6 +60,7 @@ export function PlayerView() {
   const starts = apps.filter((a) => a.started).length;
   const card = "rounded-2xl border border-line bg-surface p-5 sm:p-6";
   const facts: [string, string | number | null][] = [
+    [tr(lang, "Market value", "Valor de mercado"), p.value != null ? `${p.value} M€` : null],
     [tr(lang, "Position", "Posição"), p.posName ?? p.pos],
     [tr(lang, "Shirt", "Número"), p.jersey],
     [tr(lang, "Age", "Idade"), p.age],
@@ -150,6 +151,7 @@ export function PlayerView() {
                     <th className="pb-2 text-center font-normal">{tr(lang, "Role", "Papel")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "G", "G")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "A", "A")}</th>
+                    <th className="pb-2 text-center font-normal">{tr(lang, "Shots", "Remates")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "Cards", "Cartões")}</th>
                   </tr>
                 </thead>
@@ -179,6 +181,7 @@ export function PlayerView() {
                       <td className="py-1.5 text-center text-xs text-ink-2">{a.started ? tr(lang, "start", "titular") : tr(lang, "sub", "suplente")}</td>
                       <td className="py-1.5 text-center">{a.goals || ""}</td>
                       <td className="py-1.5 text-center">{a.assists || ""}</td>
+                      <td className="py-1.5 text-center text-ink-2">{a.shots == null ? "" : `${a.shots} (${a.sot ?? 0})`}</td>
                       <td className="py-1.5 text-center">
                         <span className="inline-flex gap-1">
                           {a.yellow && <span className="h-3 w-2 rounded-[1px] bg-[#eda100]" aria-label="yellow" />}
