@@ -18,13 +18,21 @@ const FILTERS = [
   { id: "all", en: "All", pt: "Todos" },
   { id: "correct", en: "Correct", pt: "Certos" },
   { id: "missed", en: "Missed", pt: "Errados" },
+  { id: "exact", en: "Exact score", pt: "Resultado exato" },
 ] as const;
+
+/** Chance of one exact score under the two independent Poisson goal counts. */
+const poisson = (k: number, l: number) => {
+  let p = Math.exp(-l);
+  for (let i = 1; i <= k; i++) p *= l / i;
+  return p;
+};
 
 /** Every settled forecast, loaded on demand from the static results.json. */
 export function ResultsTable({ days, generatedAt }: { days: number | null; generatedAt: string }) {
   const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState(false);
-  const [filter, setFilter] = useState<"all" | "correct" | "missed">("all");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [competition, setCompetition] = useState("");
   const [page, setPage] = useState(0);
 
@@ -53,7 +61,7 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
     () =>
       inWindow.filter(
         (r) =>
-          (filter === "all" || (filter === "correct" ? r.correct : !r.correct)) &&
+          (filter === "all" || (filter === "exact" ? r.exactScore : filter === "correct" ? r.correct : !r.correct)) &&
           (!competition || r.competition.code === competition),
       ),
     [inWindow, filter, competition],
@@ -118,14 +126,17 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
               <th className="px-2 py-2.5 font-normal">
                 <T en="Bookmakers' favourite" pt="Favorito das casas" />
               </th>
+              <th className="px-2 py-2.5 text-right font-normal">
+                <T en="Winner" pt="Vencedor" />
+              </th>
               <th className="px-2 py-2.5 text-center font-normal">
-                <T en="Predicted score" pt="Resultado previsto" />
+                <T en="Most likely score" pt="Resultado mais provável" />
               </th>
               <th className="px-2 py-2.5 text-right font-normal">
-                <T en="Goal error" pt="Erro de golos" />
+                <T en="Exact score" pt="Resultado exato" />
               </th>
               <th className="px-4 py-2.5 text-right font-normal">
-                <T en="Verdict" pt="Avaliação" />
+                <T en="Goal error" pt="Erro de golos" />
               </th>
             </tr>
           </thead>
@@ -133,7 +144,7 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
             {!results &&
               Array.from({ length: 6 }, (_, i) => (
                 <tr key={i}>
-                  <td colSpan={7} className="px-4 py-3 text-ink-3">
+                  <td colSpan={8} className="px-4 py-3 text-ink-3">
                     {i === 0 ? <T en="Loading…" pt="A carregar…" /> : " "}
                   </td>
                 </tr>
@@ -142,6 +153,8 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
               const homeWon = r.score.home > r.score.away;
               const awayWon = r.score.away > r.score.home;
               const pickProb = r.pick === "H" ? r.probs.home : r.pick === "D" ? r.probs.draw : r.probs.away;
+              const [ph, pa] = r.predScore.split("-").map(Number);
+              const scoreProb = poisson(ph, r.xg.home) * poisson(pa, r.xg.away);
               return (
                 <tr key={r.id} className="hover:bg-surface-2">
                   <td className="whitespace-nowrap px-4 py-3 align-top text-ink-2">
@@ -196,17 +209,23 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-3 text-center">{r.predScore.replace("-", "–")}</td>
-                  <td className="px-2 py-3 text-right">{num(r.goalError, 1)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 py-3 text-right">
                     <Verdict correct={r.correct} />
                   </td>
+                  <td className="px-2 py-3 text-center">
+                    {r.predScore.replace("-", "–")}
+                    <span className="block text-xs text-ink-3">{pct(scoreProb)}</span>
+                  </td>
+                  <td className="px-2 py-3 text-right">
+                    <Verdict correct={r.exactScore} />
+                  </td>
+                  <td className="px-4 py-3 text-right">{num(r.goalError, 1)}</td>
                 </tr>
               );
             })}
             {results && shown.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-ink-2">
+                <td colSpan={8} className="px-4 py-8 text-center text-ink-2">
                   <T en="Nothing matches these filters." pt="Nada corresponde a estes filtros." />
                 </td>
               </tr>
@@ -216,8 +235,8 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
       </div>
       <p className="mt-2 text-xs text-ink-3">
         <T
-          en="Goal error = distance between the expected goals and the real score, both teams added up."
-          pt="Erro de golos = diferença entre os golos esperados e o resultado real, somando as duas equipas."
+          en="Winner and exact score are judged separately. The most likely score can be a draw while a win is the most likely outcome: a draw needs one of few scores (1–1, 0–0), a win is spread over many (1–0, 2–1, 2–0…), so a single score rarely passes 15%. Goal error = distance between the expected goals and the real score, both teams added up."
+          pt="Vencedor e resultado exato são avaliados em separado. O resultado mais provável pode ser um empate mesmo quando a vitória é o desfecho mais provável: o empate concentra-se em poucos resultados (1–1, 0–0) e a vitória divide-se por muitos (1–0, 2–1, 2–0…), por isso um único resultado raramente passa dos 15%. Erro de golos = diferença entre os golos esperados e o resultado real, somando as duas equipas."
         />
       </p>
 

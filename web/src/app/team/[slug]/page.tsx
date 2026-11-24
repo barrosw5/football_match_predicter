@@ -136,18 +136,10 @@ export default async function TeamPage({ params }: PageProps<"/team/[slug]">) {
                     {m.opponent}
                   </span>
                   <span>
-                    <span className="tnum mb-1 flex justify-between text-xs text-ink-2">
-                      <span>
-                        <T en="Win" pt="Vitória" /> <strong className="text-ink">{pct(m.win)}</strong>
-                      </span>
-                      <span>
-                        <T en="Draw" pt="Empate" /> {pct(m.draw)}
-                      </span>
-                      <span>
-                        <T en="Loss" pt="Derrota" /> {pct(m.loss)}
-                      </span>
-                    </span>
-                    <ProbabilityBar probs={{ home: m.win, draw: m.draw, away: m.loss }} />
+                    <ProbabilityBar
+                      probs={{ home: m.win, draw: m.draw, away: m.loss }}
+                      labels={[<T key="w" en="Win" pt="Vitória" />, <T key="d" en="Draw" pt="Empate" />, <T key="l" en="Loss" pt="Derrota" />]}
+                    />
                   </span>
                 </Link>
               </li>
@@ -257,7 +249,7 @@ function SquadList({ players }: { players: SquadPlayer[] }) {
       {players.map((p) => (
         <li key={p.id}>
           <Link href={`/player/?id=${p.id}`} className="tnum flex items-center gap-3 py-1.5 text-sm hover:bg-surface-2">
-            <span className="w-6 shrink-0 text-right text-xs text-ink-3">{p.jersey ?? ""}</span>
+            <span className="tnum w-6 shrink-0 text-right text-xs text-ink-3">{p.jersey ?? "–"}</span>
             <span className="min-w-0 flex-1 truncate">{p.name}</span>
             <span className="hidden shrink-0 text-xs text-ink-3 sm:inline">{p.nationality ?? ""}</span>
             <span className="w-10 shrink-0 text-right text-xs text-ink-2">{p.age ?? ""}</span>

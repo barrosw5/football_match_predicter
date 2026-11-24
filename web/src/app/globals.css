@@ -123,3 +123,9 @@ html[data-lang="pt"] .i18n-en,
 html:not([data-lang="pt"]) .i18n-pt {
   display: none !important;
 }
+
+/* Logos: ESPN's dark-background variant in the dark theme (see ThemedLogo). */
+:root[data-theme="dark"] .logo-light,
+:root:not([data-theme="dark"]) .logo-dark {
+  display: none;
+}

@@ -17,7 +17,7 @@ the forecasts, together with a **public, tamper-proof track record of every pred
 
 ## Highlights
 
-- **Fully automated.** A scheduled GitHub Action downloads new results and fixtures twice a day, retrains the model,
+- **Fully automated.** A scheduled GitHub Action downloads new results and fixtures three times a day, retrains the model,
   scores finished matches, forecasts the next 7 days and redeploys the site. No server, no manual runs.
 - **Honest evaluation.** Forecasts are frozen at kick-off and stored in an append-only ledger
   ([`predictions_ledger.csv`](https://github.com/barrosw5/football_match_predicter/blob/data/predictions_ledger.csv)
@@ -55,7 +55,7 @@ flowchart LR
     E --> F["Predictions ledger<br/>frozen at kick-off,<br/>settled after full time"]
     F --> G["JSON export"]
     G --> H["Static Next.js site<br/>GitHub Pages"]
-    S(["GitHub Actions<br/>twice a day"]) -.-> C
+    S(["GitHub Actions<br/>3× a day"]) -.-> C
 ```
 
 1. **Data** ([`sources/`](src/football_predictor/sources)). football-data.co.uk provides results, shots, corners, cards,
@@ -193,7 +193,9 @@ npm run build      # static export in web/out
 
 ## Deployment & automation
 
-[`update.yml`](.github/workflows/update.yml) runs at 06:15 and 16:15 UTC (and on demand):
+[`update.yml`](.github/workflows/update.yml) runs at 05:15, 11:15 and 15:15 UTC (and on demand). European matches kick off between
+about 11:00 and 20:00 UTC and finish by 22:00, so the first run has every result of the day before and
+publishes before the first kick-off, and the other two refresh the odds before the lunchtime and evening games:
 
 1. restores the cached downloads and the track record from the `data` branch;
 2. installs the package and runs `football-predictor run`;
@@ -230,6 +232,10 @@ Data is used for non-commercial, educational purposes.
   `config.CUP_CALIBRATION`). Remaining idea: player-level availability data, which needs a paid source.
 
 ## Version history
+
+**v2.4 (2026)**: track record judges the winner and the exact score separately (with the chance of the most
+likely score); dark-theme variants of club and competition logos; three daily runs (05:15, 11:15, 15:15 UTC)
+timed around the European kick-offs.
 
 **v2.3 (2026)**: validation re-run with the cups; the 1X2 now comes from the classifier alone (best out of
 sample); Dixon-Coles, squad value and cup recalibration tested and documented as rejected.

@@ -5,26 +5,17 @@ import { useEffect, useRef, useState } from "react";
 import { competitionLabel, countryName, tr } from "@/lib/i18n";
 import { useLang } from "@/lib/use-lang";
 
+import { ThemedLogo } from "./team-logo";
+
 export type PickerCompetition = { code: string; country: string; logo?: string | null };
 
 export function CompetitionLogo({ src: raw, size = 16 }: { src?: string | null; size?: number }) {
   const src = raw?.replace(/^http:/, "https:");
   if (!src) return <span className="inline-block shrink-0" style={{ width: size, height: size }} aria-hidden="true" />;
+  if (src.startsWith("https://a.espncdn.com/i/")) return <ThemedLogo path={src.slice("https://a.espncdn.com".length)} size={size} />;
   return (
     // eslint-disable-next-line @next/next/no-img-element -- static export, remote CDN image
-    <img
-      src={
-        src.startsWith("https://a.espncdn.com/i/")
-          ? `https://a.espncdn.com/combiner/i?img=${src.slice("https://a.espncdn.com".length)}&w=${size * 2}&h=${size * 2}`
-          : src
-      }
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className="shrink-0 object-contain"
-      style={{ width: size, height: size }}
-    />
+    <img src={src} alt="" width={size} height={size} loading="lazy" className="shrink-0 object-contain" style={{ width: size, height: size }} />
   );
 }
 

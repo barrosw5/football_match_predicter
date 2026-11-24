@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { pct } from "@/lib/format";
 import { T } from "@/lib/i18n";
 import type { Outcome, Probs } from "@/lib/types";
@@ -18,12 +20,15 @@ export function ProbabilityBar({
   pick,
   size = "sm",
   names,
+  labels,
 }: {
   probs: Probs;
   pick?: Outcome;
   size?: "sm" | "lg";
   /** Team names used as labels in the large variant. */
   names?: [string, string];
+  /** Labels written before each percentage, e.g. win / draw / loss on a team page. */
+  labels?: [ReactNode, ReactNode, ReactNode];
 }) {
   const height = size === "lg" ? "h-3" : "h-2";
   const title = `${pct(probs.home)} / ${pct(probs.draw)} / ${pct(probs.away)}`;
@@ -48,7 +53,11 @@ export function ProbabilityBar({
                 pick === s.outcome ? "font-semibold text-ink" : "text-ink-2"
               }`}
             >
-              {size === "lg" && <span className="font-normal text-ink-3">{team ?? <T en={s.en} pt={s.pt} />} </span>}
+              {labels ? (
+                <span className="font-normal text-ink-3">{labels[i]} </span>
+              ) : (
+                size === "lg" && <span className="font-normal text-ink-3">{team ?? <T en={s.en} pt={s.pt} />} </span>
+              )}
               {pct(probs[s.key])}
             </span>
           );

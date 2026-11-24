@@ -28,8 +28,8 @@ const STEPS = [
     pt: ["Prever e registar", "Os jogos dos próximos 7 dias são previstos e guardados num registo que fica fixo no início do jogo."],
   },
   {
-    en: ["Score & publish", "Finished matches are scored and this site is rebuilt. Runs twice a day on GitHub Actions."],
-    pt: ["Avaliar e publicar", "Os jogos terminados são avaliados e o site é reconstruído. Corre duas vezes por dia no GitHub Actions."],
+    en: ["Score & publish", "Finished matches are scored and this site is rebuilt. Runs three times a day on GitHub Actions: early morning, before lunchtime and before the evening games."],
+    pt: ["Avaliar e publicar", "Os jogos terminados são avaliados e o site é reconstruído. Corre três vezes por dia no GitHub Actions: de madrugada, antes dos jogos da hora de almoço e antes dos jogos da noite."],
   },
 ];
 

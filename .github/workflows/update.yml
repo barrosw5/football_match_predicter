@@ -15,8 +15,11 @@ on:
       - "pyproject.toml"
       - ".github/workflows/update.yml"
   schedule:
-    - cron: "15 6 * * *" # morning: overnight results (incl. Americas-time kick-offs)
-    - cron: "15 16 * * *" # afternoon: fresh odds before the evening games
+    # Times are UTC. European kick-offs run from ~11:00 to 20:00 UTC and the last games
+    # finish by ~22:00, so:
+    - cron: "15 5 * * *" # all of yesterday's results in, before any kick-off of the day
+    - cron: "15 11 * * *" # fresher odds before the weekend lunchtime and 15:00 games
+    - cron: "15 15 * * *" # fresher odds before the evening games (UEFA 16:45 UTC in summer)
   workflow_dispatch:
     inputs:
       backtest_days:
