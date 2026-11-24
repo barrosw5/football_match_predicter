@@ -1,0 +1,102 @@
+name: Update predictions & deploy site
+
+# Twice a day: download the latest results and fixtures, retrain, settle finished
+# forecasts, forecast the next 7 days, commit the track record and redeploy the website.
+on:
+  # Code changes redeploy straight away (the bot's own data commits use GITHUB_TOKEN,
+  # which never triggers workflows, so this cannot loop).
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "web/**"
+      - "pyproject.toml"
+      - ".github/workflows/update.yml"
+  schedule:
+    - cron: "15 6 * * *" # morning: overnight results (incl. Americas-time kick-offs)
+    - cron: "15 16 * * *" # afternoon: fresh odds before the evening games
+  workflow_dispatch:
+    inputs:
+      backtest_days:
+        description: "Seed the track record with a walk-forward backtest of N days (0 = off)"
+        default: "0"
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-predictions
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # Historical seasons never change: keep the downloads between runs (only the current
+      # season and the live window are re-downloaded).
+      - name: Restore downloaded data
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-data-${{ github.run_id }}
+          restore-keys: raw-data-
+
+      - name: Install the pipeline
+        run: pip install -e .
+
+      - name: Run the pipeline
+        run: football-predictor run --backtest-days "${{ github.event.inputs.backtest_days || 0 }}"
+
+      - name: Commit the track record
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/predictions_ledger.csv web/public/data
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "data: update predictions $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git pull --rebase --autostash
+            git push
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the website
+        working-directory: web
+        env:
+          # GitHub Pages project sites live under /<repository-name>
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: |
+          npm ci
+          npm run build
+          touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/out
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
