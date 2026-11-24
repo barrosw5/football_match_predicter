@@ -60,7 +60,9 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   const top = topScores(matrix, 5);
   const markets = goalMarkets(match.xg.home, match.xg.away);
   const names: [string, string] = [match.home.name, match.away.name];
-  const outcome = (o: Outcome) => <OutcomeName outcome={o} home={names[0]} away={names[1]} />;
+  const outcome = (o: Outcome) => (
+    <OutcomeName outcome={o} home={names[0]} away={names[1]} homeLogo={match.home.logo} awayLogo={match.away.logo} />
+  );
   // Last 10 matches with statistics (build-time data); the form guide uses the last 5.
   const history = getMatchHistory()[match.id];
   const homeHistory = history?.home ?? match.home.form ?? [];
@@ -237,7 +239,13 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
             <T en="Each cell is the chance of that exact score (%)." pt="Cada célula é a probabilidade desse resultado (%)." />
           </p>
           <div className="mt-4">
-            <ScoreMatrix matrix={matrix} home={match.home.name} away={match.away.name} />
+            <ScoreMatrix
+              matrix={matrix}
+              home={match.home.name}
+              away={match.away.name}
+              homeLogo={match.home.logo}
+              awayLogo={match.away.logo}
+            />
           </div>
         </section>
 

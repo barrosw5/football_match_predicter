@@ -229,8 +229,8 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
       <p className="mt-2 text-xs text-ink-3">
         {tr(
           lang,
-          "Totals from the published line-ups of this season (main leagues, UEFA and Taça de Portugal). Market values: Transfermarkt open data. Photos, minutes, dribbles or pass accuracy are not available from free sources.",
-          "Totais das escalações publicadas desta época (ligas principais, UEFA e Taça de Portugal). Valores de mercado: dados abertos do Transfermarkt. Fotos, minutos, dribles ou % de passe não existem em fontes gratuitas.",
+          "Totals from the published line-ups of this season (main leagues and UEFA). Market values: Transfermarkt open data. Photos, minutes, dribbles or pass accuracy are not available from free sources.",
+          "Totais das escalações publicadas desta época (ligas principais e UEFA). Valores de mercado: dados abertos do Transfermarkt. Fotos, minutos, dribles ou % de passe não existem em fontes gratuitas.",
         )}
       </p>
 

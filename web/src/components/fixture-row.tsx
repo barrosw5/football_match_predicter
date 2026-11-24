@@ -44,7 +44,7 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
             </span>
             <span className="tnum min-w-0 truncate">
               <span className="font-medium">
-                <OutcomeName outcome={f.pick} home={f.home.name} away={f.away.name} />
+                <OutcomeName outcome={f.pick} home={f.home.name} away={f.away.name} homeLogo={f.home.logo} awayLogo={f.away.logo} />
               </span>{" "}
               <span className="text-ink-2">{pct(pickProb)}</span>
             </span>
@@ -56,7 +56,7 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
                 <T en="Bookmakers" pt="Casas de apostas" />
               </span>
               <span className="min-w-0 truncate">
-                <OutcomeName outcome={f.market.pick} home={f.home.name} away={f.away.name} />{" "}
+                <OutcomeName outcome={f.market.pick} home={f.home.name} away={f.away.name} homeLogo={f.home.logo} awayLogo={f.away.logo} />{" "}
                 {pct(f.market.probs[f.market.pick === "H" ? "home" : f.market.pick === "D" ? "draw" : "away"])}
                 {f.market.pick !== f.pick && (
                   <span className="ml-1.5 rounded border border-line px-1 text-[10px] text-ink">

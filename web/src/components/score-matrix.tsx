@@ -6,6 +6,8 @@ import { pct } from "@/lib/format";
 import { tr } from "@/lib/i18n";
 import { useLang } from "@/lib/use-lang";
 
+import { TeamLogo } from "./team-logo";
+
 /** Sequential single-hue ramp (light -> dark = unlikely -> likely). */
 function cellColor(p: number, max: number): string {
   const steps = 7;
@@ -20,7 +22,19 @@ type Cell = { h: number; a: number };
  * Correct-score grid laid out like a chart: home goals on the vertical axis (0 at the
  * bottom), away goals on the horizontal axis (0 on the left). Cells show percentages.
  */
-export function ScoreMatrix({ matrix, home, away }: { matrix: number[][]; home: string; away: string }) {
+export function ScoreMatrix({
+  matrix,
+  home,
+  away,
+  homeLogo,
+  awayLogo,
+}: {
+  matrix: number[][];
+  home: string;
+  away: string;
+  homeLogo?: string | null;
+  awayLogo?: string | null;
+}) {
   const lang = useLang();
   const [hover, setHover] = useState<Cell | null>(null);
   const max = Math.max(...matrix.flat());
@@ -39,7 +53,13 @@ export function ScoreMatrix({ matrix, home, away }: { matrix: number[][]; home: 
     <figure>
       <div className="flex gap-2">
         <div className="flex w-5 items-center justify-center">
-          <span className="-rotate-90 whitespace-nowrap text-xs text-ink-2">{goals(home)}</span>
+          <span className="flex -rotate-90 items-center gap-1.5 whitespace-nowrap text-xs text-ink-2">
+            {/* counter-rotated so the crest stays upright */}
+            <span className="rotate-90">
+              <TeamLogo id={homeLogo} name={home} size={14} />
+            </span>
+            {goals(home)}
+          </span>
         </div>
         <div className="min-w-0 flex-1">
           <div className="grid gap-0.5" style={{ gridTemplateColumns: `1.5rem repeat(${size}, minmax(0, 1fr))` }}>
@@ -62,7 +82,10 @@ export function ScoreMatrix({ matrix, home, away }: { matrix: number[][]; home: 
               </span>
             ))}
           </div>
-          <div className="mt-1 text-center text-xs text-ink-2">{goals(away)}</div>
+          <div className="mt-1 flex items-center justify-center gap-1.5 text-xs text-ink-2">
+            <TeamLogo id={awayLogo} name={away} size={14} />
+            {goals(away)}
+          </div>
         </div>
       </div>
       <figcaption className="tnum mt-3 min-h-5 text-sm" aria-live="polite">

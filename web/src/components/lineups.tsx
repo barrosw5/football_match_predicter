@@ -4,6 +4,7 @@ import { LocalDate, T } from "@/lib/i18n";
 import type { LastXI, LineupPlayer, MatchEvent, MatchSummary } from "@/lib/types";
 
 import { Pitch } from "./pitch";
+import { TeamLogo } from "./team-logo";
 
 type TeamInfo = { name: string; logo?: string | null };
 
@@ -124,10 +125,19 @@ export function LastStartingXI({ home, away, data }: { home: TeamInfo; away: Tea
           const xi = data[side];
           return (
             <p key={side}>
-              <span className="font-medium text-ink">{team.name}</span>:{" "}
+              <span className="inline-flex items-center gap-1.5 align-middle font-medium text-ink">
+                <TeamLogo id={team.logo} name={team.name} size={16} />
+                {team.name}
+              </span>
+              :{" "}
               {xi ? (
                 <>
-                  <T en="starting XI against" pt="onze inicial contra" /> {xi.opponent},{" "}
+                  <T en="starting XI against" pt="onze inicial contra" />{" "}
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    <TeamLogo id={xi.opponentLogo} name={xi.opponent} size={14} />
+                    {xi.opponent}
+                  </span>
+                  ,{" "}
                   <LocalDate iso={`${xi.date}T12:00:00Z`} kind="dayMonth" />.
                 </>
               ) : (

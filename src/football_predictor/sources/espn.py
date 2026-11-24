@@ -337,11 +337,13 @@ def _parse_summary(data: dict, home_id: str) -> dict:
     return {"v": SUMMARY_VERSION, "formations": formations, "lineups": lineups, "events": events}
 
 
-def load_summaries(events: pd.DataFrame, *, max_new: int = 150) -> dict[str, dict]:
+def load_summaries(events: pd.DataFrame, *, max_new: int = 300) -> dict[str, dict]:
     """Line-ups and key events of finished matches, cached per ESPN event id.
 
     Only ``max_new`` uncached matches are downloaded per call, so the cache fills up over a
-    few runs instead of hammering the API.
+    few runs instead of hammering the API. A match whose line-ups ESPN never published
+    (common in early cup rounds) is remembered as empty once it is two days old, so it
+    does not use up the budget again on every run.
     """
     wanted = events[events["status"].eq("played") & events["competition"].isin(LINEUP_COMPETITIONS)]
     wanted = wanted.sort_values("kickoff", ascending=False)
@@ -353,7 +355,8 @@ def load_summaries(events: pd.DataFrame, *, max_new: int = 150) -> dict[str, dic
         if path.exists():
             cached = json.loads(path.read_text(encoding="utf-8"))
             if cached.get("v") == SUMMARY_VERSION or fetched >= max_new:
-                out[row.espn_id] = cached
+                if cached.get("lineups", {}).get("home"):
+                    out[row.espn_id] = cached
                 continue
         if fetched >= max_new:
             continue
@@ -368,7 +371,10 @@ def load_summaries(events: pd.DataFrame, *, max_new: int = 150) -> dict[str, dic
         fetched += 1
         summary = _parse_summary(data, str(row.home_espn_id))
         if not summary["lineups"]["home"]:
-            continue  # line-ups not published (yet)
+            # Not published (yet). Give up on it after two days.
+            if pd.Timestamp(row.kickoff) < pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=2):
+                path.write_text(json.dumps({**summary, "v": SUMMARY_VERSION}), encoding="utf-8")
+            continue
         path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
         out[row.espn_id] = summary
     if fetched:

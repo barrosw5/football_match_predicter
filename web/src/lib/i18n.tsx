@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { TeamLogo } from "@/components/team-logo";
+
 /*
  * Bilingual (English / Portuguese) static site.
  *
@@ -161,10 +163,31 @@ export function LocalDate({ iso, kind }: { iso: string; kind: DateKind }) {
 // ---------------------------------------------------------------- outcomes
 
 /** "Benfica win" / "Benfica vence", or "Draw" / "Empate". */
-export function OutcomeName({ outcome, home, away }: { outcome: "H" | "D" | "A"; home: string; away: string }) {
+export function OutcomeName({
+  outcome,
+  home,
+  away,
+  homeLogo,
+  awayLogo,
+}: {
+  outcome: "H" | "D" | "A";
+  home: string;
+  away: string;
+  /** ESPN ids: when given, the winner's crest is shown before the name. */
+  homeLogo?: string | null;
+  awayLogo?: string | null;
+}) {
   if (outcome === "D") return <T en="Draw" pt="Empate" />;
   const team = outcome === "H" ? home : away;
-  return <T en={`${team} win`} pt={`${team} vence`} />;
+  const logo = outcome === "H" ? homeLogo : awayLogo;
+  const text = <T en={`${team} win`} pt={`${team} vence`} />;
+  if (logo === undefined) return text;
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 align-bottom">
+      <TeamLogo id={logo} name={team} size={16} />
+      <span className="truncate">{text}</span>
+    </span>
+  );
 }
 
 export function outcomeText(outcome: "H" | "D" | "A", home: string, away: string, lang: Lang): string {

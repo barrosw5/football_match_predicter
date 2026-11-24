@@ -138,6 +138,7 @@ def build_profiles(
                     int(gf),
                     int(ga),
                     m.match_id if m.match_id in published_ids else None,
+                    team_ids.get(opp) or None,
                 ]
             )
 
@@ -156,6 +157,7 @@ def build_profiles(
                     "home": bool(home),
                     "opponent": _text(f["away_display" if home else "home_display"], opp),
                     "opponentSlug": slugs.get(opp),
+                    "opponentLogo": team_ids.get(opp) or None,
                     "win": round(float(probs[0] if home else probs[2]), 4),
                     "draw": round(float(probs[1]), 4),
                     "loss": round(float(probs[2] if home else probs[0]), 4),
@@ -178,6 +180,8 @@ def build_profiles(
                         "competition": s["competition"],
                         "home": bool(home),
                         "opponent": display_names.get(opp, opp),
+                        "opponentSlug": slugs.get(opp),
+                        "opponentLogo": team_ids.get(opp) or None,
                         "goalsFor": int(s["home_goals"] if home else s["away_goals"]),
                         "goalsAgainst": int(s["away_goals"] if home else s["home_goals"]),
                         "pick": s["pick"],
@@ -253,6 +257,9 @@ STAT_KEYS = (
 )
 
 
+TABLE_EXCLUDED = ("PTC",)
+
+
 def players_table(
     summaries: dict[str, dict] | None,
     events: pd.DataFrame | None,
@@ -265,7 +272,13 @@ def players_table(
         return {"season": None, "competitions": {}}
     today = pd.Timestamp(now).tz_convert("UTC").tz_localize(None)
     start = pd.Timestamp(year=today.year if today.month >= 7 else today.year - 1, month=7, day=1)
-    ev = events[events["espn_id"].isin(summaries) & (events["date"] >= start)]
+    # Leagues and UEFA only: ESPN publishes cup line-ups for a handful of matches, so cup
+    # totals would be misleading.
+    ev = events[
+        events["espn_id"].isin(summaries)
+        & (events["date"] >= start)
+        & ~events["competition"].isin(TABLE_EXCLUDED)
+    ]
     table: dict[str, dict[str, dict]] = {}
     for r in ev.itertuples():
         s = summaries[r.espn_id]

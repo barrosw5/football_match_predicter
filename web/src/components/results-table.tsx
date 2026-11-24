@@ -186,7 +186,7 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
                   </td>
                   <td className="max-w-52 px-2 py-3">
                     <span className="block truncate font-medium">
-                      <OutcomeName outcome={r.pick} home={r.home.name} away={r.away.name} />
+                      <OutcomeName outcome={r.pick} home={r.home.name} away={r.away.name} homeLogo={r.home.logo} awayLogo={r.away.logo} />
                     </span>
                     <span className="flex items-center gap-1.5 text-xs text-ink-3">
                       {pct(pickProb)}
@@ -197,7 +197,7 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
                     {r.marketPick ? (
                       <>
                         <span className="block truncate text-ink-2">
-                          <OutcomeName outcome={r.marketPick} home={r.home.name} away={r.away.name} />
+                          <OutcomeName outcome={r.marketPick} home={r.home.name} away={r.away.name} homeLogo={r.home.logo} awayLogo={r.away.logo} />
                         </span>
                         <span className={`text-xs ${r.marketCorrect ? "text-good-ink" : "text-bad-ink"}`}>
                           {r.marketCorrect ? <T en="right" pt="acertou" /> : <T en="wrong" pt="falhou" />}

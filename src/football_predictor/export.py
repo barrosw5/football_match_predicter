@@ -348,11 +348,11 @@ def lineups_payload(
     team_games: dict[str, list] = {}
     for r in ev.itertuples():
         s = summaries[r.espn_id]
-        for side, tid, opp in (
-            ("home", r.home_espn_id, r.away_espn),
-            ("away", r.away_espn_id, r.home_espn),
+        for side, tid, opp, opp_id in (
+            ("home", r.home_espn_id, r.away_espn, r.away_espn_id),
+            ("away", r.away_espn_id, r.home_espn, r.home_espn_id),
         ):
-            team_games.setdefault(str(tid), []).append((r.kickoff, s, side, opp))
+            team_games.setdefault(str(tid), []).append((r.kickoff, s, side, opp, opp_id))
     for games in team_games.values():
         games.sort(key=lambda g: g[0])
     for _, row in ledger[ledger["status"] == "pending"].iterrows():
@@ -362,10 +362,11 @@ def lineups_payload(
                 g for g in team_games.get(str(row[f"{side}_espn_id"]), []) if g[0] < row["kickoff"]
             ]
             if games:
-                kickoff, s, played_as, opponent = games[-1]
+                kickoff, s, played_as, opponent, opponent_id = games[-1]
                 entry[side] = {
                     "date": f"{kickoff:%Y-%m-%d}",
                     "opponent": opponent,
+                    "opponentLogo": str(opponent_id) if pd.notna(opponent_id) and opponent_id != "" else None,
                     "formation": s["formations"].get(played_as),
                     "players": [p for p in s["lineups"][played_as] if p["starter"]],
                 }

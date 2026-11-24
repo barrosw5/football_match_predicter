@@ -1,5 +1,6 @@
 import { competitionLabel, formatDate, T } from "@/lib/i18n";
 import type { FormGame } from "@/lib/types";
+import { TeamLogo } from "./team-logo";
 
 export const RESULT_PT = { W: "V", D: "E", L: "D" } as const;
 const RESULT_WORD = {
@@ -87,7 +88,11 @@ function FormTooltip({ game: g, latest }: { game: FormGame; latest: boolean }) {
         </span>{" "}
         <T en={RESULT_WORD[g.result].en} pt={RESULT_WORD[g.result].pt} />{" "}
         <span className="text-ink-2">
-          <T en={g.home ? "at home vs" : "away at"} pt={g.home ? "em casa vs" : "fora vs"} /> {g.opponent}
+          <T en={g.home ? "at home vs" : "away at"} pt={g.home ? "em casa vs" : "fora vs"} />{" "}
+          <span className="inline-flex items-center gap-1 align-middle">
+            <TeamLogo id={g.opponentLogo} name={g.opponent} size={14} />
+            {g.opponent}
+          </span>
         </span>
       </span>
     </span>

@@ -226,6 +226,7 @@ export interface MatchSummary {
 export interface LastXI {
   date: string;
   opponent: string;
+  opponentLogo?: string | null;
   formation: string | null;
   players: LineupPlayer[];
 }
@@ -248,8 +249,8 @@ export interface SquadPlayer {
   apps?: number;
 }
 
-/** [date, competition, home (1/0), opponent, opponent slug, goals for, goals against, match page id] */
-export type HistoryRow = [string, string, number, string, string | null, number, number, string | null];
+/** [date, competition, home (1/0), opponent, opponent slug, goals for, goals against, match page id, opponent logo id] */
+export type HistoryRow = [string, string, number, string, string | null, number, number, string | null, string | null];
 
 export interface TeamProfile {
   key: string;
@@ -275,6 +276,7 @@ export interface TeamProfile {
     home: boolean;
     opponent: string;
     opponentSlug: string | null;
+    opponentLogo: string | null;
     win: number;
     draw: number;
     loss: number;
@@ -285,6 +287,8 @@ export interface TeamProfile {
     competition: string;
     home: boolean;
     opponent: string;
+    opponentSlug: string | null;
+    opponentLogo: string | null;
     goalsFor: number;
     goalsAgainst: number;
     pick: "H" | "D" | "A";

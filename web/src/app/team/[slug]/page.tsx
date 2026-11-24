@@ -131,9 +131,10 @@ export default async function TeamPage({ params }: PageProps<"/team/[slug]">) {
                       <T en={competitionLabel(m.competition, "en")} pt={competitionLabel(m.competition, "pt")} />
                     </span>
                   </span>
-                  <span className="truncate font-medium">
-                    <span className="mr-1.5 text-xs font-normal text-ink-3">{m.home ? "vs" : <T en="at" pt="em" />}</span>
-                    {m.opponent}
+                  <span className="flex min-w-0 items-center gap-2 font-medium">
+                    <span className="text-xs font-normal text-ink-3">{m.home ? "vs" : <T en="at" pt="em" />}</span>
+                    <TeamLogo id={m.opponentLogo} name={m.opponent} size={20} />
+                    <span className="truncate">{m.opponent}</span>
                   </span>
                   <span>
                     <ProbabilityBar
@@ -165,9 +166,11 @@ export default async function TeamPage({ params }: PageProps<"/team/[slug]">) {
                   <span className="w-16 shrink-0 text-xs text-ink-3">
                     <LocalDate iso={`${r.date}T12:00:00Z`} kind="dayMonth" />
                   </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {r.home ? "vs" : <T en="at" pt="em" />} {r.opponent}{" "}
-                    <span className="tnum font-semibold">
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span className="shrink-0">{r.home ? "vs" : <T en="at" pt="em" />}</span>
+                    <TeamLogo id={r.opponentLogo} name={r.opponent} size={16} />
+                    <span className="truncate">{r.opponent}</span>
+                    <span className="tnum shrink-0 font-semibold">
                       {r.goalsFor}–{r.goalsAgainst}
                     </span>
                   </span>

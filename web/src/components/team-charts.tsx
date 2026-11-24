@@ -1,4 +1,4 @@
-import { formatDate, T } from "@/lib/i18n";
+import { T } from "@/lib/i18n";
 
 /** Rating after every match over the last year (single series: no legend needed). */
 export function EloChart({ points }: { points: [string, number][] }) {
@@ -20,7 +20,18 @@ export function EloChart({ points }: { points: [string, number][] }) {
   const y = (v: number) => M.top + (1 - (v - min) / (max - min)) * (H - M.top - M.bottom);
   const path = points.map(([d, v], i) => `${i ? "L" : "M"}${x(d).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   const ticks = [min, (min + max) / 2, max];
-  const dateTicks = [0, Math.floor(points.length / 2), points.length - 1].map((i) => points[i][0]);
+  // One mark on the first day of every month; January shows the year instead.
+  const months: Date[] = [];
+  for (let d = new Date(t0); ; ) {
+    d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+    if (d.getTime() > t1) break;
+    months.push(d);
+  }
+  const xt = (t: number) => M.left + ((t - t0) / Math.max(t1 - t0, 1)) * (W - M.left - M.right);
+  const monthLabel = (d: Date, lang: "en" | "pt") =>
+    d.getUTCMonth() === 0
+      ? String(d.getUTCFullYear())
+      : new Intl.DateTimeFormat(lang === "pt" ? "pt-PT" : "en-GB", { month: "short", timeZone: "UTC" }).format(d).replace(".", "");
   const last = points[points.length - 1];
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Elo over the last year">
@@ -32,17 +43,14 @@ export function EloChart({ points }: { points: [string, number][] }) {
           </text>
         </g>
       ))}
-      {dateTicks.map((d, i) => (
-        <text
-          key={`${d}-${i}`}
-          x={x(d)}
-          y={H - 6}
-          textAnchor={i === 0 ? "start" : i === 2 ? "end" : "middle"}
-          className="fill-[var(--ink-3)] text-[11px]"
-        >
-          <tspan className="i18n-en">{formatDate(`${d}T12:00:00Z`, "dayMonth", "en")}</tspan>
-          <tspan className="i18n-pt">{formatDate(`${d}T12:00:00Z`, "dayMonth", "pt")}</tspan>
-        </text>
+      {months.map((d) => (
+        <g key={d.getTime()}>
+          <line x1={xt(d.getTime())} x2={xt(d.getTime())} y1={H - M.bottom} y2={H - M.bottom + 4} stroke="var(--ink-3)" />
+          <text x={xt(d.getTime())} y={H - 4} textAnchor="middle" className="fill-[var(--ink-3)] text-[11px]">
+            <tspan className="i18n-en">{monthLabel(d, "en")}</tspan>
+            <tspan className="i18n-pt">{monthLabel(d, "pt")}</tspan>
+          </text>
+        </g>
       ))}
       <path d={path} pathLength={1} className="draw-line" fill="none" stroke="var(--home)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       <circle className="fade-in [animation-delay:900ms]" cx={x(last[0])} cy={y(last[1])} r="4.5" fill="var(--home)" stroke="var(--surface)" strokeWidth="2" />

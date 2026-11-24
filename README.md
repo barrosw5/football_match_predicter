@@ -235,7 +235,9 @@ Data is used for non-commercial, educational purposes.
 
 **v2.4 (2026)**: track record judges the winner and the exact score separately (with the chance of the most
 likely score); dark-theme variants of club and competition logos; three daily runs (05:15, 11:15, 15:15 UTC)
-timed around the European kick-offs.
+timed around the European kick-offs; restrained motion (respects reduced-motion); club crest next to every club name;
+monthly ticks on the Elo chart; players table covers the whole season (cup matches without published line-ups no
+longer use up the download budget) and leaves out the Taça de Portugal.
 
 **v2.3 (2026)**: validation re-run with the cups; the 1X2 now comes from the classifier alone (best out of
 sample); Dixon-Coles, squad value and cup recalibration tested and documented as rejected.

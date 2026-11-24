@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { competitionLabel, formatDate, T, tr } from "@/lib/i18n";
 import type { HistoryRow } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { TeamLogo } from "./team-logo";
 
 const PAGE = 30;
 
@@ -92,7 +93,7 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
           </thead>
           <tbody className="divide-y divide-line">
             {shown.map((r, i) => {
-              const [date, competition, home, opponent, oppSlug, gf, ga, matchId] = r;
+              const [date, competition, home, opponent, oppSlug, gf, ga, matchId, oppLogo] = r;
               const res = gf > ga ? "W" : gf === ga ? "D" : "L";
               return (
                 <tr key={`${date}-${i}`} className="hover:bg-surface-2">
@@ -101,14 +102,17 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
                   </td>
                   <td className="max-w-40 truncate px-2 py-1.5 text-xs text-ink-2">{competitionLabel(competition, lang)}</td>
                   <td className="max-w-56 px-2 py-1.5">
-                    <span className="mr-1.5 text-xs text-ink-3">{home ? "vs" : tr(lang, "at", "em")}</span>
-                    {oppSlug ? (
-                      <Link href={`/team/${oppSlug}/`} className="hover:underline">
-                        {opponent}
-                      </Link>
-                    ) : (
-                      opponent
-                    )}
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="w-5 shrink-0 text-xs text-ink-3">{home ? "vs" : tr(lang, "at", "em")}</span>
+                      <TeamLogo id={oppLogo} name={opponent} size={16} />
+                      {oppSlug ? (
+                        <Link href={`/team/${oppSlug}/`} className="truncate hover:underline">
+                          {opponent}
+                        </Link>
+                      ) : (
+                        <span className="truncate">{opponent}</span>
+                      )}
+                    </span>
                   </td>
                   <td className="px-2 py-1.5 text-center">
                     <span className="font-semibold">
