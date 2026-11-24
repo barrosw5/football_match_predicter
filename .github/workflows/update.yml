@@ -87,7 +87,8 @@ jobs:
             echo "No changes"
           else
             git commit -q -m "Update predictions $(date -u +'%Y-%m-%d %H:%M') UTC"
-            git push origin data
+            # If someone else updated the branch meanwhile, replay on top once; never block the deploy.
+            git push origin data || { git pull --rebase -X theirs origin data && git push origin data; }               || echo "::warning::Could not save the track record to the data branch"
           fi
 
       - uses: actions/setup-node@v5
