@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Data colours (home / draw / away, sequential blue) were validated for
+ * colour-vision deficiency in both modes; they are only ever used on marks, never on text.
+ */
+:root {
+  color-scheme: light;
+  --bg: #f4f3ef;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --line: #e2e0da;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #74736e;
+  --accent: #1c5cab;
+
+  --home: #2a78d6;
+  --draw: #1baf7a;
+  --away: #eb6834;
+
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --bad: #d03b3b;
+  --bad-ink: #b22b2b;
+
+  --seq-0: #f0efec;
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #256abf;
+  --seq-6: #184f95;
+  --seq-7: #0d366b;
+  --seq-on-high: #ffffff; /* label colour on the darkest/most likely cells */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --line: #2f2f2c;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --ink-3: #95948c;
+    --accent: #86b6ef;
+
+    --home: #3987e5;
+    --draw: #199e70;
+    --away: #d95926;
+
+    --good: #0ca30c;
+    --good-ink: #4cc24c;
+    --bad: #d03b3b;
+    --bad-ink: #ef7373;
+
+    --seq-0: #232321;
+    --seq-1: #0d366b;
+    --seq-2: #104281;
+    --seq-3: #184f95;
+    --seq-4: #256abf;
+    --seq-5: #3987e5;
+    --seq-6: #6da7ec;
+    --seq-7: #b7d3f6;
+    --seq-on-high: #0b0b0b;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-home: var(--home);
+  --color-draw: var(--draw);
+  --color-away: var(--away);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-bad: var(--bad);
+  --color-bad-ink: var(--bad-ink);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01";
+}
+
+/* Numbers line up in tables, tiles and charts. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--seq-2);
+}
+
+/* Bilingual content: see src/lib/i18n.tsx */
+html[data-lang="pt"] .i18n-en,
+html:not([data-lang="pt"]) .i18n-pt {
+  display: none !important;
+}
