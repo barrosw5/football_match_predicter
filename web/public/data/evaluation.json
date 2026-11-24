@@ -1,46 +1,46 @@
 {
- "generatedAt": "2026-11-24T17:08:46Z",
+ "generatedAt": "2026-11-24T21:54:44Z",
  "testPeriod": "the 2023/24 to 2025/26 seasons",
  "rows": [
   {
    "model": "Historical frequencies",
-   "n": 21255,
-   "accuracy": 0.4398,
-   "logLoss": 1.0721,
-   "brier": 0.6485,
-   "rps": 0.2291
+   "n": 23301,
+   "accuracy": 0.4437,
+   "logLoss": 1.0658,
+   "brier": 0.6448,
+   "rps": 0.2325
   },
   {
    "model": "Elo only (logistic)",
-   "n": 21255,
-   "accuracy": 0.5028,
-   "logLoss": 1.0044,
-   "brier": 0.6005,
-   "rps": 0.206
+   "n": 23301,
+   "accuracy": 0.5193,
+   "logLoss": 0.9898,
+   "brier": 0.5898,
+   "rps": 0.2059
   },
   {
    "model": "Poisson goals model",
-   "n": 21255,
-   "accuracy": 0.5166,
-   "logLoss": 0.9894,
-   "brier": 0.59,
-   "rps": 0.201
+   "n": 23301,
+   "accuracy": 0.5344,
+   "logLoss": 0.9713,
+   "brier": 0.577,
+   "rps": 0.2005
   },
   {
    "model": "XGBoost classifier",
-   "n": 21255,
-   "accuracy": 0.518,
-   "logLoss": 0.9877,
-   "brier": 0.5891,
-   "rps": 0.2007
+   "n": 23301,
+   "accuracy": 0.5342,
+   "logLoss": 0.9551,
+   "brier": 0.5717,
+   "rps": 0.1994
   },
   {
    "model": "Final model (blend)",
-   "n": 21255,
-   "accuracy": 0.5176,
-   "logLoss": 0.9871,
-   "brier": 0.5888,
-   "rps": 0.2006
+   "n": 23301,
+   "accuracy": 0.5342,
+   "logLoss": 0.9551,
+   "brier": 0.5717,
+   "rps": 0.1994
   },
   {
    "model": "Bookmakers (matches with odds)",
@@ -53,72 +53,72 @@
   {
    "model": "Final model (same matches)",
    "n": 19826,
-   "accuracy": 0.5143,
-   "logLoss": 0.9896,
-   "brier": 0.5906,
-   "rps": 0.2004
+   "accuracy": 0.5138,
+   "logLoss": 0.9902,
+   "brier": 0.591,
+   "rps": 0.2005
   }
  ],
  "topFeatures": [
   {
-   "feature": "mkt_p_away",
-   "importance": 0.1602
-  },
-  {
-   "feature": "mkt_p_home",
-   "importance": 0.1592
+   "feature": "is_cup",
+   "importance": 0.3585
   },
   {
    "feature": "elo_p_home",
-   "importance": 0.0661
+   "importance": 0.0788
   },
   {
    "feature": "elo_diff",
-   "importance": 0.0505
+   "importance": 0.0694
+  },
+  {
+   "feature": "mkt_p_away",
+   "importance": 0.0687
+  },
+  {
+   "feature": "mkt_p_home",
+   "importance": 0.0565
+  },
+  {
+   "feature": "comp_draw_rate",
+   "importance": 0.0333
+  },
+  {
+   "feature": "is_uefa",
+   "importance": 0.0331
   },
   {
    "feature": "mkt_p_draw",
-   "importance": 0.0369
-  },
-  {
-   "feature": "away_xg_for_5",
-   "importance": 0.0123
-  },
-  {
-   "feature": "gd_diff_10",
-   "importance": 0.012
-  },
-  {
-   "feature": "home_xg_against_5",
-   "importance": 0.0117
-  },
-  {
-   "feature": "away_elo",
-   "importance": 0.0116
-  },
-  {
-   "feature": "away_xg_against_5",
-   "importance": 0.0115
-  },
-  {
-   "feature": "home_xg_for_5",
-   "importance": 0.0115
-  },
-  {
-   "feature": "xg_diff_5",
-   "importance": 0.0111
-  },
-  {
-   "feature": "home_shots_for_5",
-   "importance": 0.0107
+   "importance": 0.0272
   },
   {
    "feature": "tier",
-   "importance": 0.0107
+   "importance": 0.0218
   },
   {
-   "feature": "home_pos",
-   "importance": 0.0106
+   "feature": "home_ga_10",
+   "importance": 0.0079
+  },
+  {
+   "feature": "away_gdpg_season",
+   "importance": 0.0064
+  },
+  {
+   "feature": "home_elo",
+   "importance": 0.0061
+  },
+  {
+   "feature": "home_gf_10",
+   "importance": 0.006
+  },
+  {
+   "feature": "gd_diff_10",
+   "importance": 0.0058
+  },
+  {
+   "feature": "comp_avg_goals",
+   "importance": 0.0056
   }
  ]
 }

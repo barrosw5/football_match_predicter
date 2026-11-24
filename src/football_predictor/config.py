@@ -150,8 +150,16 @@ GOALS_PARAMS: dict = {
     "subsample": 0.8,
     "colsample_bytree": 0.7,
 }
-# Final 1X2 probabilities = w * classifier + (1 - w) * Poisson score model
-BLEND_WEIGHT = 0.7
+# Recalibrate domestic-cup probabilities on the latest season (see MatchModel._fit_cup_calibrator).
+# Mixed out-of-sample result, so disabled. Dixon-Coles low-score correction was also tested:
+# the fitted rho was ~0.01 (no effect), so it is not used.
+CUP_CALIBRATION = False
+
+# Final 1X2 probabilities = w * classifier + (1 - w) * Poisson score model. Re-validated after
+# adding the domestic cups: log loss falls steadily up to w = 1 (0.9580 at 0.7 -> 0.9551 at 1.0,
+# same RPS and accuracy), so the 1X2 now comes from the classifier alone and the Poisson
+# models are used for expected goals and the correct-score grid.
+BLEND_WEIGHT = 1.0
 
 # A pick is flagged as a "value bet" when model_prob * odds - 1 exceeds this edge. The model
 # is close to the market, so small edges are mostly noise plus bookmaker margin.

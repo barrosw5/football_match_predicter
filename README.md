@@ -26,7 +26,7 @@ the forecasts, together with a **public, tamper-proof track record of every pred
   bookmakers, including where it loses.
 - **Leakage-free features.** Elo ratings, rolling form, league tables, rest days and market prices are computed only from
   information available before kick-off; a unit test changes a match's score and asserts its features don't move.
-- **Validated out of sample.** Walk-forward validation over 21,255 matches (2023/24 to 2025/26) matches the
+- **Validated out of sample.** Walk-forward validation over 23,301 matches (2023/24 to 2025/26, leagues, cups and UEFA) matches the
   bookmakers' accuracy and clearly beats Elo-only and base-rate baselines (results below).
 - **Model vs bookmakers, match by match.** Every fixture and result shows the model's pick next to the bookmakers'
   favourite; the track record counts who was right when they disagreed.
@@ -82,8 +82,9 @@ flowchart LR
    odds and Elo are in). *Not usable:* starting line-ups, which free sources publish only about an hour before
    kick-off, after the forecasts are made.
 4. **Model** ([`model.py`](src/football_predictor/model.py)). An XGBoost multi-class classifier for 1X2, plus two
-   XGBoost Poisson regressors for each side's expected goals. The published 1X2 blends the classifier (70%) with the
-   Poisson-implied probabilities (30%). Training samples are weighted with a 4-year half-life.
+   XGBoost Poisson regressors for each side's expected goals. The published 1X2 comes from the classifier (blends with the
+   Poisson-implied probabilities were validated and no longer help once cups are included); the Poisson models give
+   expected goals and the correct-score grid. Training samples are weighted with a 4-year half-life.
 5. **Tracking** ([`tracking.py`](src/football_predictor/tracking.py)). Forecasts can be refreshed until kick-off and
    are frozen afterwards. Results are attached from ESPN (fast) or football-data (fallback). Matches decided in extra
    time or on penalties are excluded because the 90-minute score is unknown.
@@ -105,21 +106,20 @@ Walk-forward validation (each season predicted by a model trained only on earlie
 
 | Model | Matches | Accuracy | Log loss | Brier | RPS |
 |---|---:|---:|---:|---:|---:|
-| Historical frequencies | 21,255 | 44.0% | 1.0721 | 0.6485 | 0.2291 |
-| Elo only (logistic regression) | 21,255 | 50.3% | 1.0044 | 0.6005 | 0.2060 |
-| Poisson goals model | 21,255 | 51.7% | 0.9894 | 0.5900 | 0.2010 |
-| XGBoost classifier | 21,255 | 51.8% | 0.9877 | 0.5891 | 0.2007 |
-| **Final model (blend)** | 21,255 | **51.8%** | **0.9871** | **0.5888** | **0.2006** |
+| Historical frequencies | 23,301 | 44.4% | 1.0658 | 0.6448 | 0.2325 |
+| Elo only (logistic regression) | 23,301 | 51.9% | 0.9898 | 0.5898 | 0.2059 |
+| Poisson goals model | 23,301 | 53.4% | 0.9713 | 0.5770 | 0.2005 |
+| **Final model (XGBoost classifier)** | 23,301 | **53.4%** | **0.9551** | **0.5717** | **0.1994** |
 | Bookmakers, margin removed (matches with odds) | 19,826 | 51.6% | 0.9893 | 0.5903 | 0.2003 |
-| Final model, same matches | 19,826 | 51.4% | 0.9896 | 0.5906 | 0.2004 |
+| Final model, same matches | 19,826 | 51.4% | 0.9902 | 0.5910 | 0.2005 |
 
 What this means:
 
-- About 52% is typical for 1X2 football forecasting; draws (~25% of matches) are almost never the single most likely
+- About 52-54% is typical for 1X2 football forecasting; draws (~25% of matches) are almost never the single most likely
   outcome. The model **performs on par with the bookmakers**, the strongest public benchmark, and beats every simpler
   approach on every metric.
-- Expected goals are off by **0.95 goals** per home team (vs 1.04 for a constant-average baseline), and the most
-  likely score is exactly right in **13%** of matches.
+- Expected goals are off by **0.96 goals** per home team (vs 1.06 for a constant-average baseline), and the most
+  likely score is exactly right in **12.4%** of matches.
 - "Value bets" (model probability × odds > 1.10) have historically **lost money**: when the model disagrees strongly
   with the market, the market is usually right. The site reports this openly instead of hiding it.
 
@@ -225,10 +225,14 @@ Data is used for non-commercial, educational purposes.
 - Squad values are a proxy for budget; club budgets themselves are not published in any open dataset.
 - xG is only available from 2026/27, so its features will become more useful as seasons accumulate.
 - Clubs from countries outside the dataset (e.g. Ukraine, Croatia) are rated from their European matches only.
-- Next steps: Dixon-Coles low-score correction, player-level availability data, probability calibration per
-  competition.
+- Tried and rejected (see section 8 of the modelling notebook): squad market value as a feature, a Dixon-Coles
+  low-score correction (fitted rho about 0) and per-competition recalibration (mixed results, behind
+  `config.CUP_CALIBRATION`). Remaining idea: player-level availability data, which needs a paid source.
 
 ## Version history
+
+**v2.3 (2026)**: validation re-run with the cups; the 1X2 now comes from the classifier alone (best out of
+sample); Dixon-Coles, squad value and cup recalibration tested and documented as rejected.
 
 **v2.2 (2026)**: players table with market values, competition logos and logo picker, collapsible fixture days
 (only the open day is rendered), GitHub icon, rebalanced AI track record page.

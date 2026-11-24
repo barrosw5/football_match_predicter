@@ -177,8 +177,8 @@ export default function MethodologyPage() {
             pt={["Modelo de golos.", "Dois regressores XGBoost com objetivo Poisson preveem os golos esperados de cada equipa, de onde saem a matriz de resultados exatos, ambas marcam e mais/menos de 2,5 golos."]}
           />
           <Bullet
-            en={["Blend.", "The published 1X2 is 70% classifier and 30% the probabilities implied by the goals model, which is better calibrated than either alone."]}
-            pt={["Combinação.", "O 1X2 publicado é 70% classificador e 30% as probabilidades do modelo de golos, o que fica mais bem calibrado do que cada um sozinho."]}
+            en={["Which model gives the 1X2.", "Blends of the classifier and the goals model were compared by walk-forward validation; since the domestic cups were added, the classifier alone scores best, so it gives the published probabilities and the goals model gives the scores."]}
+            pt={["Que modelo dá o 1X2.", "Foram comparadas combinações do classificador com o modelo de golos em validação temporal; desde que as taças entraram, o classificador sozinho é o melhor, por isso é ele que dá as probabilidades publicadas e o modelo de golos dá os resultados."]}
           />
           <Bullet
             en={["Recency.", "Training matches are weighted with a 4-year half-life, so the model follows changes in the game such as the drop in home advantage after 2020."]}
