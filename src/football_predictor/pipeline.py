@@ -6,6 +6,7 @@ fixtures -> export JSON for the website.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from datetime import date
@@ -19,6 +20,7 @@ from .config import (
     FIXTURE_DAYS_AHEAD,
     MODEL_PATH,
     RESULT_DAYS_BACK,
+    TEAM_DIRECTORY_PATH,
 )
 from .dataset import (
     MATCH_COLUMNS,
@@ -225,7 +227,15 @@ def run(*, today: date | None = None, refresh: bool = True, backtest_days: int =
         ledger = pd.concat([kept, bt], ignore_index=True)
 
     save_ledger(ledger)
-    export_site_data(load_ledger(), ctx.matches, model.metadata, now)
+    save_team_directory(ctx.display_names, ctx.team_ids)
+    export_site_data(
+        load_ledger(),
+        ctx.matches,
+        model.metadata,
+        now,
+        display_names=ctx.display_names,
+        team_ids=ctx.team_ids,
+    )
     log.info("Done: ledger has %d forecasts", len(ledger))
 
 
@@ -233,4 +243,19 @@ def export_only() -> None:
     """Re-export website JSON from the saved ledger (no downloads, no training)."""
     now = pd.Timestamp.now(tz="UTC").floor("min")
     meta = MatchModel.load(MODEL_PATH).metadata if MODEL_PATH.exists() else {}
-    export_site_data(load_ledger(), load_matches(), meta, now)
+    display, ids = load_team_directory()
+    export_site_data(load_ledger(), load_matches(), meta, now, display_names=display, team_ids=ids)
+
+
+def save_team_directory(display: dict[str, str], ids: dict[str, str]) -> None:
+    """Canonical team -> ESPN display name / id, so `export` can also run offline."""
+    TEAM_DIRECTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"display": display, "ids": ids}
+    TEAM_DIRECTORY_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
+def load_team_directory() -> tuple[dict[str, str], dict[str, str]]:
+    if not TEAM_DIRECTORY_PATH.exists():
+        return {}, {}
+    data = json.loads(TEAM_DIRECTORY_PATH.read_text(encoding="utf-8"))
+    return data.get("display", {}), data.get("ids", {})

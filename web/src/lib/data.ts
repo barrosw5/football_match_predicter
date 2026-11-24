@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 
-import type { Fixture, Meta, Performance, Result } from "./types";
+import type { Fixture, FormGame, Meta, Performance, Result } from "./types";
 
 // JSON written by the Python pipeline (`football-predictor run`). Read at build time only.
 const DATA_DIR = path.join(process.cwd(), "public", "data");
@@ -20,6 +20,11 @@ const EMPTY_STATS = { n: 0, byCompetition: [], calibration: [] };
 export const getFixtures = cache((): Fixture[] => readJson<{ fixtures: Fixture[] }>("fixtures.json", { fixtures: [] }).fixtures);
 
 export const getResults = cache((): Result[] => readJson<{ results: Result[] }>("results.json", { results: [] }).results);
+
+/** Pre-match form of both teams for every published result, keyed by match id. */
+export const getResultsForm = cache(
+  (): Record<string, { home: FormGame[]; away: FormGame[] }> => readJson("form.json", {}),
+);
 
 export const getPerformance = cache(
   (): Performance =>

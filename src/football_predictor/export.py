@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from .config import COMPETITIONS, COMPETITIONS_BY_CODE, VALUE_EDGE, WEB_DATA_DIR
-from .predict import recent_form
+from .predict import FormIndex
 from .tracking import scored
 
 WINDOWS = {"7d": 7, "30d": 30, "90d": 90, "all": None}
@@ -88,7 +88,7 @@ def _market(row) -> dict | None:
     return {"probs": probs, "pick": pick}
 
 
-def _team(row, side: str, matches: pd.DataFrame | None) -> dict:
+def _team(row, side: str, form: FormIndex | None) -> dict:
     name = (
         row[f"{side}_display"] if isinstance(row[f"{side}_display"], str) else row[f"{side}_team"]
     )
@@ -99,23 +99,39 @@ def _team(row, side: str, matches: pd.DataFrame | None) -> dict:
         "elo": _num(row[f"{side}_elo"], 0),
         "logo": str(tid) if isinstance(tid, str) and tid else None,
     }
-    if matches is not None:
-        team["form"] = recent_form(
-            matches, row[f"{side}_team"], pd.Timestamp(row["kickoff"]).tz_localize(None).normalize()
-        )
+    if form is not None:
+        team["form"] = form.last(row[f"{side}_team"], _match_day(row))
     return team
 
 
-def fixtures_payload(ledger: pd.DataFrame, matches: pd.DataFrame, now: pd.Timestamp) -> list[dict]:
+def _match_day(row) -> pd.Timestamp:
+    return pd.Timestamp(row["kickoff"]).tz_convert("UTC").tz_localize(None).normalize()
+
+
+def fixtures_payload(ledger: pd.DataFrame, form: FormIndex, now: pd.Timestamp) -> list[dict]:
     pending = ledger[ledger["status"] == "pending"].sort_values("kickoff")
     out = []
     for _, row in pending.iterrows():
         item = _base(row)
         item["status"] = "upcoming" if row["kickoff"] > now else "awaiting_result"
-        item["home"] = _team(row, "home", matches)
-        item["away"] = _team(row, "away", matches)
+        item["home"] = _team(row, "home", form)
+        item["away"] = _team(row, "away", form)
         out.append(item)
     return out
+
+
+def results_form_payload(sc: pd.DataFrame, form: FormIndex, now: pd.Timestamp) -> dict:
+    """Pre-match form of both teams for every published result (read at build time only)."""
+    if sc.empty:
+        return {}
+    recent = sc[sc["kickoff"] >= now - pd.Timedelta(days=RESULTS_HISTORY_DAYS)]
+    return {
+        row["match_id"]: {
+            "home": form.last(row["home_team"], _match_day(row)),
+            "away": form.last(row["away_team"], _match_day(row)),
+        }
+        for _, row in recent.iterrows()
+    }
 
 
 def results_payload(sc: pd.DataFrame, now: pd.Timestamp) -> list[dict]:
@@ -278,15 +294,19 @@ def export_site_data(
     model_meta: dict,
     now: pd.Timestamp,
     out_dir: Path = WEB_DATA_DIR,
+    display_names: dict[str, str] | None = None,
+    team_ids: dict[str, str] | None = None,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     sc = scored(ledger)
     generated = _iso(now)
-    fixtures = fixtures_payload(ledger, matches, now)
+    form = FormIndex(matches, display_names, team_ids)
+    fixtures = fixtures_payload(ledger, form, now)
     payloads = {
         "fixtures.json": {"generatedAt": generated, "fixtures": fixtures},
         "results.json": {"generatedAt": generated, "results": results_payload(sc, now)},
         "performance.json": {"generatedAt": generated, **performance_payload(sc, now)},
+        "form.json": results_form_payload(sc, form, now),
         "meta.json": {
             "generatedAt": generated,
             "model": model_meta,

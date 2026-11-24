@@ -27,11 +27,24 @@ export interface ValuePick {
   edge: number;
 }
 
+/** One of a team's recent matches, from that team's point of view. */
+export interface FormGame {
+  date: string; // YYYY-MM-DD
+  result: "W" | "D" | "L";
+  goalsFor: number;
+  goalsAgainst: number;
+  home: boolean;
+  opponent: string;
+  opponentLogo: string | null;
+  competition: string; // competition code
+}
+
 export interface Team {
   name: string;
   key: string;
   elo: number | null;
-  form?: ("W" | "D" | "L")[];
+  /** Last matches before kick-off, oldest first. */
+  form?: FormGame[];
   logo?: string | null; // ESPN team id (crest)
 }
 

@@ -19,6 +19,7 @@ LEDGER_PATH = DATA_DIR / "predictions_ledger.csv"  # committed: the prediction t
 WEB_DATA_DIR = ROOT_DIR / "web" / "public" / "data"  # JSON consumed by the website
 
 MATCHES_PATH = PROCESSED_DIR / "matches.parquet"
+TEAM_DIRECTORY_PATH = PROCESSED_DIR / "teams.json"  # canonical name -> ESPN name / id
 MODEL_PATH = MODELS_DIR / "model.joblib"
 
 # ---------------------------------------------------------------------------

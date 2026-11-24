@@ -62,3 +62,23 @@ def test_fixtures_get_features_from_latest_state(small_league):
     assert row["home_elo"] == ratings["A"]
     assert row["home_points_5"] == 3.0  # three wins
     assert np.isnan(row["target"])
+
+
+def test_form_index_lists_previous_matches_oldest_first(small_league):
+    from football_predictor.predict import FormIndex
+
+    form = FormIndex(small_league, display_names={"C": "Club C"}, team_ids={"C": "99"})
+    games = form.last("A", pd.Timestamp("2020-08-15"))
+    assert [g["date"] for g in games] == ["2020-08-01", "2020-08-08"]  # same-day match excluded
+    assert games[-1] == {
+        "date": "2020-08-08",
+        "result": "W",
+        "goalsFor": 2,
+        "goalsAgainst": 1,
+        "home": False,
+        "opponent": "D",
+        "opponentLogo": None,
+        "competition": "E0",
+    }
+    later = form.last("A", pd.Timestamp("2020-09-01"))
+    assert later[-1]["opponent"] == "Club C" and later[-1]["opponentLogo"] == "99"

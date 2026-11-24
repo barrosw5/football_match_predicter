@@ -99,14 +99,59 @@ def predict_fixtures(
     return out.reset_index()
 
 
-def recent_form(matches: pd.DataFrame, team: str, before: pd.Timestamp, n: int = 5) -> list[str]:
-    """Last ``n`` results of ``team`` before a date, oldest first, as ``W``/``D``/``L``."""
-    played = matches[(matches["date"] < before) & matches["status"].eq("played")]
-    games = played[(played["home_team"] == team) | (played["away_team"] == team)].tail(n)
-    form = []
-    for r in games.itertuples():
-        gf, ga = (
-            (r.home_goals, r.away_goals) if r.home_team == team else (r.away_goals, r.home_goals)
-        )
-        form.append("W" if gf > ga else "D" if gf == ga else "L")
-    return form
+class FormIndex:
+    """Fast "last N matches before a date" lookups for every team (used by the website).
+
+    Each entry is one played match from the team's point of view, oldest first.
+    """
+
+    def __init__(
+        self,
+        matches: pd.DataFrame,
+        display_names: dict[str, str] | None = None,
+        team_ids: dict[str, str] | None = None,
+    ):
+        self.display = display_names or {}
+        self.ids = team_ids or {}
+        played = matches[matches["status"].eq("played")]
+        sides = []
+        for side, opp, is_home in (("home", "away", True), ("away", "home", False)):
+            sides.append(
+                pd.DataFrame(
+                    {
+                        "team": played[f"{side}_team"].to_numpy(),
+                        "date": pd.to_datetime(played["date"]).to_numpy(),
+                        "opponent": played[f"{opp}_team"].to_numpy(),
+                        "home": is_home,
+                        "gf": played[f"{side}_goals"].astype(int).to_numpy(),
+                        "ga": played[f"{opp}_goals"].astype(int).to_numpy(),
+                        "competition": played["competition"].to_numpy(),
+                    }
+                )
+            )
+        long = pd.concat(sides, ignore_index=True).sort_values(["team", "date"], kind="stable")
+        self._by_team = {
+            team: g.reset_index(drop=True) for team, g in long.groupby("team", sort=False)
+        }
+
+    def last(self, team: str, before: pd.Timestamp, n: int = 5) -> list[dict]:
+        """The team's last ``n`` matches strictly before ``before`` (oldest first)."""
+        games = self._by_team.get(team)
+        if games is None:
+            return []
+        end = int(games["date"].searchsorted(pd.Timestamp(before), side="left"))
+        out = []
+        for g in games.iloc[max(0, end - n) : end].itertuples():
+            out.append(
+                {
+                    "date": g.date.strftime("%Y-%m-%d"),
+                    "result": "W" if g.gf > g.ga else "D" if g.gf == g.ga else "L",
+                    "goalsFor": int(g.gf),
+                    "goalsAgainst": int(g.ga),
+                    "home": bool(g.home),
+                    "opponent": self.display.get(g.opponent, g.opponent),
+                    "opponentLogo": self.ids.get(g.opponent),
+                    "competition": g.competition,
+                }
+            )
+        return out

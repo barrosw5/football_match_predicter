@@ -102,8 +102,20 @@ export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
         </span>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-1.5">
         <OutcomeLegend />
+        <p className="flex items-center gap-1.5 text-xs text-ink-2">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] bg-[var(--good)] text-[9px] font-semibold text-white"
+          >
+            <T en="W" pt="V" />
+          </span>
+          <T
+            en="Form: last 5 matches, latest on the right (filled). Hover a letter to see the match."
+            pt="Forma: últimos 5 jogos, o mais recente à direita (preenchido). Passa o rato numa letra para ver o jogo."
+          />
+        </p>
       </div>
 
       {days.length === 0 && (
@@ -119,7 +131,8 @@ export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {
               <LocalDate iso={list[0].kickoff} kind="day" />
               <span className="tnum text-xs text-ink-3">{list.length}</span>
             </h2>
-            <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+            {/* no overflow-hidden: the form tooltips must be able to overlap the row above */}
+            <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
               {list.map((f) => (
                 <FixtureRow key={f.id} fixture={f} />
               ))}

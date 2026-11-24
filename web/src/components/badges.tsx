@@ -13,35 +13,6 @@ export function CompetitionTag({ competition, full = false }: { competition: Com
   );
 }
 
-const FORM_STYLE: Record<"W" | "D" | "L", string> = {
-  W: "text-good-ink",
-  D: "text-ink-3",
-  L: "text-bad-ink",
-};
-const FORM_PT = { W: "V", D: "E", L: "D" } as const;
-
-/** Last results, oldest first. The letter carries the meaning; colour only reinforces it. */
-export function FormPills({ form }: { form?: ("W" | "D" | "L")[] }) {
-  if (!form || form.length === 0)
-    return (
-      <span className="text-xs text-ink-3">
-        <T en="no recent games" pt="sem jogos recentes" />
-      </span>
-    );
-  return (
-    <span className="inline-flex gap-0.5" title={form.join(" ")}>
-      {form.map((f, i) => (
-        <span
-          key={i}
-          className={`inline-flex h-4 w-4 items-center justify-center rounded-[3px] border border-line bg-surface text-[10px] font-semibold ${FORM_STYLE[f]}`}
-        >
-          <T en={f} pt={FORM_PT[f]} />
-        </span>
-      ))}
-    </span>
-  );
-}
-
 export function SourceTag({ source }: { source: "live" | "backtest" }) {
   if (source === "live") return null;
   return (

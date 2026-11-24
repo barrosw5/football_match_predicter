@@ -4,7 +4,8 @@ import { formatTime, num, pct } from "@/lib/format";
 import { OutcomeName, T } from "@/lib/i18n";
 import type { Fixture, Team } from "@/lib/types";
 
-import { CompetitionTag, FormPills } from "./badges";
+import { CompetitionTag } from "./badges";
+import { FormPills } from "./form-pills";
 import { ProbabilityBar } from "./probability-bar";
 import { TeamLogo } from "./team-logo";
 
@@ -13,10 +14,10 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
   const likely = `${Math.floor(f.xg.home)}–${Math.floor(f.xg.away)}`;
   const pickProb = f.pick === "H" ? f.probs.home : f.pick === "D" ? f.probs.draw : f.probs.away;
   return (
-    <li>
+    <li className="group/row">
       <Link
         href={`/match/${f.id}/`}
-        className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3 gap-y-3 px-4 py-3.5 transition-colors hover:bg-surface-2 md:grid-cols-[3.25rem_minmax(0,1.3fr)_minmax(0,1fr)_7rem] md:items-center"
+        className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3 group-first/row:rounded-t-xl group-last/row:rounded-b-xl gap-y-3 px-4 py-3.5 transition-colors hover:bg-surface-2 md:grid-cols-[3.25rem_minmax(0,1.3fr)_minmax(0,1fr)_7rem] md:items-center"
       >
         <div className="tnum pt-0.5 text-sm text-ink-2 md:pt-0">
           {f.status === "awaiting_result" ? (
@@ -89,7 +90,7 @@ function TeamLine({ team, bold }: { team: Team; bold: boolean }) {
         <span className={`truncate ${bold ? "font-semibold" : ""}`}>{team.name}</span>
       </span>
       <span className="hidden shrink-0 sm:inline-flex">
-        <FormPills form={team.form} />
+        <FormPills games={team.form} />
       </span>
     </div>
   );

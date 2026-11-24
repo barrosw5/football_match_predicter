@@ -3,16 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { CompetitionTag, FormPills, SourceTag, Verdict } from "@/components/badges";
+import { CompetitionTag, SourceTag, Verdict } from "@/components/badges";
+import { FormPills } from "@/components/form-pills";
+import { RecentGames } from "@/components/recent-games";
 import { OddsCalculator } from "@/components/odds-calculator";
 import { ProbabilityBar } from "@/components/probability-bar";
 import { ScoreMatrix } from "@/components/score-matrix";
 import { TeamLogo } from "@/components/team-logo";
-import { getFixtures, getMeta, getResults } from "@/lib/data";
+import { getFixtures, getMeta, getResults, getResultsForm } from "@/lib/data";
 import { formatTime, num, pct, signed } from "@/lib/format";
 import { LocalDate, OutcomeName, T } from "@/lib/i18n";
 import { goalMarkets, scoreMatrix, topScores } from "@/lib/poisson";
-import type { Fixture, Outcome, Result, Team } from "@/lib/types";
+import type { Fixture, FormGame, Outcome, Result, Team } from "@/lib/types";
 
 export const dynamicParams = false;
 
@@ -56,6 +58,10 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   const markets = goalMarkets(match.xg.home, match.xg.away);
   const names: [string, string] = [match.home.name, match.away.name];
   const outcome = (o: Outcome) => <OutcomeName outcome={o} home={names[0]} away={names[1]} />;
+  // Upcoming fixtures carry their form; settled matches read it from form.json (build time only).
+  const storedForm = settled ? getResultsForm()[match.id] : undefined;
+  const homeForm = match.home.form ?? storedForm?.home;
+  const awayForm = match.away.form ?? storedForm?.away;
 
   return (
     <article className="py-6">
@@ -75,7 +81,7 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
         </div>
 
         <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          <TeamBlock team={match.home} align="left" />
+          <TeamBlock team={match.home} form={homeForm} align="left" />
           <div className="tnum text-center">
             {result ? (
               <div className="text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -96,7 +102,7 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
               )}
             </div>
           </div>
-          <TeamBlock team={match.away} align="right" />
+          <TeamBlock team={match.away} form={awayForm} align="right" />
         </div>
 
         <div className="mt-7">
@@ -155,6 +161,22 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
         {match.odds && <MarketTable match={match} names={names} edge={meta.valueEdge} />}
       </section>
 
+      <section className={`mt-4 ${card}`}>
+        <h2 className="font-semibold">
+          <T en="Recent matches" pt="Últimos jogos" />
+        </h2>
+        <p className="mt-1 text-sm text-ink-2">
+          <T
+            en="Each team's last 5 matches before this one, most recent first. Scores from that team's side."
+            pt="Os últimos 5 jogos de cada equipa antes deste, do mais recente para o mais antigo. Resultados do ponto de vista dessa equipa."
+          />
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <RecentGames team={match.home.name} logo={match.home.logo} games={homeForm} />
+          <RecentGames team={match.away.name} logo={match.away.logo} games={awayForm} />
+        </div>
+      </section>
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <section className={card}>
           <h2 className="font-semibold">
@@ -209,14 +231,14 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   );
 }
 
-function TeamBlock({ team, align }: { team: Team; align: "left" | "right" }) {
+function TeamBlock({ team, form, align }: { team: Team; form?: FormGame[]; align: "left" | "right" }) {
   return (
     <div className={`flex min-w-0 flex-col gap-2 ${align === "right" ? "items-end text-right" : ""}`}>
       <TeamLogo id={team.logo} name={team.name} size={48} />
       <div className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">{team.name}</div>
       <div className={`flex flex-wrap items-center gap-2 text-xs text-ink-2 ${align === "right" ? "justify-end" : ""}`}>
         {team.elo !== null && <span className="tnum">Elo {Math.round(team.elo)}</span>}
-        {team.form && <FormPills form={team.form} />}
+        {form && form.length > 0 && <FormPills games={form} />}
       </div>
     </div>
   );

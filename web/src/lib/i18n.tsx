@@ -75,6 +75,39 @@ export function competitionName(code: string, name: string, lang: Lang): string 
   return lang === "pt" ? (COMPETITION_PT[code] ?? name) : name;
 }
 
+// Same codes as football_predictor/config.py
+const COMPETITION_EN: Record<string, string> = {
+  E0: "Premier League",
+  E1: "Championship",
+  SP1: "La Liga",
+  SP2: "La Liga 2",
+  D1: "Bundesliga",
+  D2: "2. Bundesliga",
+  I1: "Serie A",
+  I2: "Serie B",
+  F1: "Ligue 1",
+  F2: "Ligue 2",
+  P1: "Primeira Liga",
+  N1: "Eredivisie",
+  B1: "Pro League",
+  T1: "Süper Lig",
+  G1: "Super League (GRE)",
+  SC0: "Premiership",
+  AUT: "Bundesliga (AUT)",
+  SWZ: "Super League (SUI)",
+  DNK: "Superliga",
+  NOR: "Eliteserien",
+  SWE: "Allsvenskan",
+  CL: "Champions League",
+  EL: "Europa League",
+  ECL: "Conference League",
+};
+
+/** Competition name from its code alone (for match lists that only carry the code). */
+export function competitionLabel(code: string, lang: Lang): string {
+  return competitionName(code, COMPETITION_EN[code] ?? code, lang);
+}
+
 export function countryName(country: string, lang: Lang): string {
   return lang === "pt" ? (COUNTRY_PT[country] ?? country) : country;
 }
