@@ -366,7 +366,9 @@ def lineups_payload(
                 entry[side] = {
                     "date": f"{kickoff:%Y-%m-%d}",
                     "opponent": opponent,
-                    "opponentLogo": str(opponent_id) if pd.notna(opponent_id) and opponent_id != "" else None,
+                    "opponentLogo": str(opponent_id)
+                    if pd.notna(opponent_id) and opponent_id != ""
+                    else None,
                     "formation": s["formations"].get(played_as),
                     "players": [p for p in s["lineups"][played_as] if p["starter"]],
                 }
