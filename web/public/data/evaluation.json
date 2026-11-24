@@ -1,0 +1,124 @@
+{
+ "generatedAt": "2026-11-24T17:08:46Z",
+ "testPeriod": "the 2023/24 to 2025/26 seasons",
+ "rows": [
+  {
+   "model": "Historical frequencies",
+   "n": 21255,
+   "accuracy": 0.4398,
+   "logLoss": 1.0721,
+   "brier": 0.6485,
+   "rps": 0.2291
+  },
+  {
+   "model": "Elo only (logistic)",
+   "n": 21255,
+   "accuracy": 0.5028,
+   "logLoss": 1.0044,
+   "brier": 0.6005,
+   "rps": 0.206
+  },
+  {
+   "model": "Poisson goals model",
+   "n": 21255,
+   "accuracy": 0.5166,
+   "logLoss": 0.9894,
+   "brier": 0.59,
+   "rps": 0.201
+  },
+  {
+   "model": "XGBoost classifier",
+   "n": 21255,
+   "accuracy": 0.518,
+   "logLoss": 0.9877,
+   "brier": 0.5891,
+   "rps": 0.2007
+  },
+  {
+   "model": "Final model (blend)",
+   "n": 21255,
+   "accuracy": 0.5176,
+   "logLoss": 0.9871,
+   "brier": 0.5888,
+   "rps": 0.2006
+  },
+  {
+   "model": "Bookmakers (matches with odds)",
+   "n": 19826,
+   "accuracy": 0.5161,
+   "logLoss": 0.9893,
+   "brier": 0.5903,
+   "rps": 0.2003
+  },
+  {
+   "model": "Final model (same matches)",
+   "n": 19826,
+   "accuracy": 0.5143,
+   "logLoss": 0.9896,
+   "brier": 0.5906,
+   "rps": 0.2004
+  }
+ ],
+ "topFeatures": [
+  {
+   "feature": "mkt_p_away",
+   "importance": 0.1602
+  },
+  {
+   "feature": "mkt_p_home",
+   "importance": 0.1592
+  },
+  {
+   "feature": "elo_p_home",
+   "importance": 0.0661
+  },
+  {
+   "feature": "elo_diff",
+   "importance": 0.0505
+  },
+  {
+   "feature": "mkt_p_draw",
+   "importance": 0.0369
+  },
+  {
+   "feature": "away_xg_for_5",
+   "importance": 0.0123
+  },
+  {
+   "feature": "gd_diff_10",
+   "importance": 0.012
+  },
+  {
+   "feature": "home_xg_against_5",
+   "importance": 0.0117
+  },
+  {
+   "feature": "away_elo",
+   "importance": 0.0116
+  },
+  {
+   "feature": "away_xg_against_5",
+   "importance": 0.0115
+  },
+  {
+   "feature": "home_xg_for_5",
+   "importance": 0.0115
+  },
+  {
+   "feature": "xg_diff_5",
+   "importance": 0.0111
+  },
+  {
+   "feature": "home_shots_for_5",
+   "importance": 0.0107
+  },
+  {
+   "feature": "tier",
+   "importance": 0.0107
+  },
+  {
+   "feature": "home_pos",
+   "importance": 0.0106
+  }
+ ]
+}
