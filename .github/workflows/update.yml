@@ -1,10 +1,12 @@
 name: Update predictions & deploy site
 
 # Twice a day: download the latest results and fixtures, retrain, settle finished
-# forecasts, forecast the next 7 days, commit the track record and redeploy the website.
+# forecasts, forecast the next 7 days, save the track record and redeploy the website.
+#
+# The track record (predictions ledger + site JSON) lives on the `data` branch, so `main`
+# stays code-only and its branch protection does not need a bypass for the bot.
 on:
-  # Code changes redeploy straight away (the bot's own data commits use GITHUB_TOKEN,
-  # which never triggers workflows, so this cannot loop).
+  # Code changes redeploy straight away.
   push:
     branches: [main]
     paths:
@@ -36,9 +38,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - name: Restore the track record from the data branch
+        run: |
+          if git fetch --quiet origin data:refs/remotes/origin/data; then
+            git show origin/data:predictions_ledger.csv > data/predictions_ledger.csv
+            echo "Restored $(wc -l < data/predictions_ledger.csv) ledger lines"
+          else
+            echo "No data branch yet: starting from the seed ledger committed on main"
+          fi
+
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -58,20 +69,28 @@ jobs:
       - name: Run the pipeline
         run: football-predictor run --backtest-days "${{ github.event.inputs.backtest_days || 0 }}"
 
-      - name: Commit the track record
+      - name: Save the track record to the data branch
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/predictions_ledger.csv web/public/data
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse --verify --quiet origin/data > /dev/null; then
+            git worktree add -B data ../track origin/data
+          else
+            git worktree add --orphan -b data ../track
+          fi
+          cp data/predictions_ledger.csv ../track/
+          mkdir -p ../track/site-data
+          cp web/public/data/*.json ../track/site-data/
+          cd ../track
+          git add -A
           if git diff --cached --quiet; then
             echo "No changes"
           else
-            git commit -m "data: update predictions $(date -u +'%Y-%m-%d %H:%M') UTC"
-            git pull --rebase --autostash
-            git push
+            git commit -q -m "Update predictions $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git push origin data
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

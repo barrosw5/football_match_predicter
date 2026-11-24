@@ -20,7 +20,8 @@ together with a **public, tamper-proof track record of every prediction**, to a 
 - **Fully automated.** A scheduled GitHub Action downloads new results and fixtures twice a day, retrains the model,
   scores finished matches, forecasts the next 7 days and redeploys the site. No server, no manual runs.
 - **Honest evaluation.** Forecasts are frozen at kick-off and stored in an append-only ledger
-  ([`data/predictions_ledger.csv`](data/predictions_ledger.csv)). The *Track record* page shows how many matches the model
+  ([`predictions_ledger.csv`](https://github.com/barrosw5/football_match_predicter/blob/data/predictions_ledger.csv)
+  on the `data` branch, updated by the bot). The *Track record* page shows how many matches the model
   got right in the last 7/30/90 days, by how much it missed the score, its calibration, and how it compares with the
   bookmakers, including where it loses.
 - **Leakage-free features.** Elo ratings, rolling form, league tables, rest days and market prices are computed only from
@@ -124,7 +125,7 @@ The live numbers for the last 7/30/90 days are on the site's
 │   ├── 01_data_exploration.ipynb   sources, coverage, home advantage, goal distributions, market calibration
 │   └── 02_modelling.ipynb          validation vs baselines and bookmakers, calibration, feature importance
 ├── tests/                      pytest suite (features, team matching, metrics, ledger rules, ESPN parser)
-├── data/predictions_ledger.csv the public track record (updated by the bot)
+├── data/predictions_ledger.csv seed of the track record (the live one is on the `data` branch)
 ├── web/                        Next.js + TypeScript + Tailwind static site
 └── .github/workflows/          CI + scheduled update & deploy
 ```
@@ -166,9 +167,10 @@ npm run build      # static export in web/out
 
 [`update.yml`](.github/workflows/update.yml) runs at 06:15 and 16:15 UTC (and on demand):
 
-1. restores the cached downloads, installs the package and runs `football-predictor run`;
-2. commits the updated ledger and JSON files;
-3. builds the Next.js site and deploys it to GitHub Pages.
+1. restores the cached downloads and the track record from the `data` branch;
+2. installs the package and runs `football-predictor run`;
+3. commits the updated ledger and JSON to the `data` branch (so `main` stays code-only);
+4. builds the Next.js site and deploys it to GitHub Pages.
 
 One-time setup: **Settings > Pages > Build and deployment > Source: GitHub Actions**. To seed the track record on a
 fresh repository, run the workflow manually with `backtest_days = 90`.
