@@ -12,6 +12,7 @@ export default function HomePage() {
   const meta = getMeta();
   const month = perf.windows["30d"];
   const leagues = meta.competitions.filter((c) => c.kind === "league").length;
+  const cups = meta.competitions.filter((c) => c.kind === "cup" && c.country !== "Europe").length;
 
   return (
     <>
@@ -22,8 +23,8 @@ export default function HomePage() {
           </h1>
           <p className="mt-3 max-w-xl text-ink-2 text-pretty">
             <T
-              en={`Win, draw and loss probabilities, expected goals and likely scores for ${leagues} European leagues plus the Champions, Europa and Conference League. Retrained and refreshed automatically every day; every forecast is kept and scored once the match ends.`}
-              pt={`Probabilidades de vitória, empate e derrota, golos esperados e resultados prováveis para ${leagues} ligas europeias e para a Liga dos Campeões, Liga Europa e Liga Conferência. O modelo é retreinado e atualizado todos os dias; cada previsão fica guardada e é avaliada no fim do jogo.`}
+              en={`Win, draw and loss probabilities, expected goals and likely scores for ${leagues} European leagues, the Champions, Europa and Conference League and ${cups} domestic cups. Retrained and refreshed automatically every day; every forecast is kept and scored once the match ends.`}
+              pt={`Probabilidades de vitória, empate e derrota, golos esperados e resultados prováveis para ${leagues} ligas europeias, Liga dos Campeões, Liga Europa, Liga Conferência e ${cups} taças nacionais. O modelo é retreinado e atualizado todos os dias; cada previsão fica guardada e é avaliada no fim do jogo.`}
             />
           </p>
         </div>

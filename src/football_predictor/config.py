@@ -17,6 +17,7 @@ PROCESSED_DIR = DATA_DIR / "processed"  # unified match table (git-ignored)
 MODELS_DIR = ROOT_DIR / "models"  # trained model artefacts (git-ignored)
 LEDGER_PATH = DATA_DIR / "predictions_ledger.csv"  # committed: the prediction track record
 WEB_DATA_DIR = ROOT_DIR / "web" / "public" / "data"  # JSON consumed by the website
+WEB_BUILD_DATA_DIR = ROOT_DIR / "web" / "build-data"  # JSON read only while building the site
 
 MATCHES_PATH = PROCESSED_DIR / "matches.parquet"
 TEAM_DIRECTORY_PATH = PROCESSED_DIR / "teams.json"  # canonical name -> ESPN name / id
@@ -97,10 +98,27 @@ COMPETITIONS: tuple[Competition, ...] = (
     Competition("CL", "Champions League", "Europe", "cup", 0, "uefa.champions", elo_prior=1450),
     Competition("EL", "Europa League", "Europe", "cup", 0, "uefa.europa", elo_prior=1430),
     Competition("ECL", "Conference League", "Europe", "cup", 0, "uefa.europa.conf", elo_prior=1400),
+    # --- Domestic cups (from ESPN). Clubs first seen here are usually lower-division
+    # sides, hence the low starting rating.
+    Competition(
+        "PTC", "Taça de Portugal", "Portugal", "cup", 0, "por.taca.portugal", elo_prior=1300
+    ),
+    Competition("FAC", "FA Cup", "England", "cup", 0, "eng.fa", elo_prior=1300),
+    Competition("EFLC", "EFL Cup", "England", "cup", 0, "eng.league_cup", elo_prior=1300),
+    Competition("CDR", "Copa del Rey", "Spain", "cup", 0, "esp.copa_del_rey", elo_prior=1300),
+    Competition("DFBP", "DFB-Pokal", "Germany", "cup", 0, "ger.dfb_pokal", elo_prior=1300),
+    Competition("CI", "Coppa Italia", "Italy", "cup", 0, "ita.coppa_italia", elo_prior=1300),
+    Competition(
+        "CDF", "Coupe de France", "France", "cup", 0, "fra.coupe_de_france", elo_prior=1250
+    ),
+    Competition("KNVB", "KNVB Cup", "Netherlands", "cup", 0, "ned.cup", elo_prior=1300),
+    Competition("SCC", "Scottish Cup", "Scotland", "cup", 0, "sco.tennents", elo_prior=1250),
+    Competition("SLC", "Scottish League Cup", "Scotland", "cup", 0, "sco.cis", elo_prior=1250),
 )
 
 COMPETITIONS_BY_CODE: dict[str, Competition] = {c.code: c for c in COMPETITIONS}
 CUP_CODES = tuple(c.code for c in COMPETITIONS if c.kind == "cup")
+UEFA_CODES = tuple(c.code for c in COMPETITIONS if c.kind == "cup" and c.country == "Europe")
 
 
 def competition(code: str) -> Competition:

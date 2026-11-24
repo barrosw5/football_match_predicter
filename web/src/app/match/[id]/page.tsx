@@ -5,12 +5,15 @@ import type { ReactNode } from "react";
 
 import { CompetitionTag, SourceTag, Verdict } from "@/components/badges";
 import { FormPills } from "@/components/form-pills";
+import { LastStartingXI, MatchLineups } from "@/components/lineups";
+import { MatchStats } from "@/components/match-stats";
 import { RecentGames } from "@/components/recent-games";
 import { OddsCalculator } from "@/components/odds-calculator";
 import { ProbabilityBar } from "@/components/probability-bar";
 import { ScoreMatrix } from "@/components/score-matrix";
 import { TeamLogo } from "@/components/team-logo";
-import { getFixtures, getMeta, getResults, getResultsForm } from "@/lib/data";
+import { getFixtures, getLineups, getMatchHistory, getMeta, getResults, getTeams } from "@/lib/data";
+import { teamSlug } from "@/lib/slug";
 import { formatTime, num, pct, signed } from "@/lib/format";
 import { LocalDate, OutcomeName, T } from "@/lib/i18n";
 import { goalMarkets, scoreMatrix, topScores } from "@/lib/poisson";
@@ -58,10 +61,15 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   const markets = goalMarkets(match.xg.home, match.xg.away);
   const names: [string, string] = [match.home.name, match.away.name];
   const outcome = (o: Outcome) => <OutcomeName outcome={o} home={names[0]} away={names[1]} />;
-  // Upcoming fixtures carry their form; settled matches read it from form.json (build time only).
-  const storedForm = settled ? getResultsForm()[match.id] : undefined;
-  const homeForm = match.home.form ?? storedForm?.home;
-  const awayForm = match.away.form ?? storedForm?.away;
+  // Last 10 matches with statistics (build-time data); the form guide uses the last 5.
+  const history = getMatchHistory()[match.id];
+  const homeHistory = history?.home ?? match.home.form ?? [];
+  const awayHistory = history?.away ?? match.away.form ?? [];
+  const lineups = getLineups();
+  const summary = settled ? lineups.results[match.id] : undefined;
+  const lastXI = settled ? undefined : lineups.lastXI[match.id];
+  const homeForm = homeHistory.slice(-5);
+  const awayForm = awayHistory.slice(-5);
 
   return (
     <article className="py-6">
@@ -177,6 +185,47 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
         </div>
       </section>
 
+      {summary && (
+        <section className={`mt-4 ${card}`}>
+          <h2 className="mb-4 font-semibold">
+            <T en="Line-ups and key events" pt="Escalações e lances principais" />
+          </h2>
+          <MatchLineups summary={summary} home={match.home} away={match.away} />
+        </section>
+      )}
+
+      {lastXI && (
+        <section className={`mt-4 ${card}`}>
+          <h2 className="font-semibold">
+            <T en="Previous starting XI" pt="Último onze inicial" />
+          </h2>
+          <p className="mb-4 mt-1 text-sm text-ink-2">
+            <T
+              en="Who started each team's previous match. Confirmed line-ups are only published about an hour before kick-off, and injuries are not covered."
+              pt="Quem foi titular no jogo anterior de cada equipa. As escalações oficiais só saem cerca de uma hora antes do jogo e as lesões não estão incluídas."
+            />
+          </p>
+          <LastStartingXI home={match.home} away={match.away} data={lastXI} />
+        </section>
+      )}
+
+      <section className={`mt-4 ${card}`}>
+        <h2 className="font-semibold">
+          <T en="Statistics" pt="Estatísticas" />
+        </h2>
+        <p className="mb-4 mt-1 text-sm text-ink-2">
+          <T
+            en="What the model expects for this match, and what both teams have been producing lately."
+            pt="O que o modelo espera para este jogo e o que as duas equipas têm produzido nos últimos jogos."
+          />
+        </p>
+        <MatchStats
+          home={{ name: match.home.name, logo: match.home.logo, games: homeHistory }}
+          away={{ name: match.away.name, logo: match.away.logo, games: awayHistory }}
+          expected={{ xgHome: match.xg.home, xgAway: match.xg.away, btts: markets.btts, over25: markets.over25 }}
+        />
+      </section>
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <section className={card}>
           <h2 className="font-semibold">
@@ -232,12 +281,30 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
 }
 
 function TeamBlock({ team, form, align }: { team: Team; form?: FormGame[]; align: "left" | "right" }) {
+  const slug = teamSlug(team.key);
+  const hasPage = slug in getTeams();
+  const identity = (
+    <>
+      <TeamLogo id={team.logo} name={team.name} size={48} />
+      <span className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">{team.name}</span>
+    </>
+  );
   return (
     <div className={`flex min-w-0 flex-col gap-2 ${align === "right" ? "items-end text-right" : ""}`}>
-      <TeamLogo id={team.logo} name={team.name} size={48} />
-      <div className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">{team.name}</div>
+      {hasPage ? (
+        <Link href={`/team/${slug}/`} className={`flex flex-col gap-2 hover:underline ${align === "right" ? "items-end" : ""}`}>
+          {identity}
+        </Link>
+      ) : (
+        <div className={`flex flex-col gap-2 ${align === "right" ? "items-end" : ""}`}>{identity}</div>
+      )}
       <div className={`flex flex-wrap items-center gap-2 text-xs text-ink-2 ${align === "right" ? "justify-end" : ""}`}>
         {team.elo !== null && <span className="tnum">Elo {Math.round(team.elo)}</span>}
+        {team.value != null && (
+          <span className="tnum" title="Transfermarkt">
+            <T en="Squad" pt="Plantel" /> {team.value >= 1000 ? `${(team.value / 1000).toFixed(2)} B€` : `${Math.round(team.value)} M€`}
+          </span>
+        )}
         {form && form.length > 0 && <FormPills games={form} />}
       </div>
     </div>

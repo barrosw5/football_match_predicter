@@ -42,7 +42,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
 
   return (
     <div>
-      <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-line bg-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="-mx-4 mb-6 border-b border-line px-4 py-3 sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <div role="group" className="flex rounded-lg border border-line bg-surface p-0.5">
             {WINDOWS.map((w) => (
@@ -109,7 +109,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
             />
           </section>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <section className={card}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-semibold">

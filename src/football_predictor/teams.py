@@ -281,7 +281,10 @@ class TeamMatcher:
         self._by_key: dict[str, str] = {}
         for team in known_teams:
             self._by_key.setdefault(normalise(team), team)
-        self._cache: dict[tuple[str, str | None], str] = {}
+        self._cache: dict[tuple[str, str | None, bool], str] = {}
+        # ESPN team id -> canonical name, learned from league matches (see dataset.build_matcher).
+        # The most reliable signal: ESPN keeps one id per club across all competitions.
+        self.id_map: dict[str, str] = {}
 
     @classmethod
     def from_matches(
@@ -290,14 +293,25 @@ class TeamMatcher:
         return cls(dict(teams_with_country), **kw)
 
     def match(
-        self, name: str, *, alternatives: Iterable[str] = (), country: str | None = None
+        self,
+        name: str,
+        *,
+        alternatives: Iterable[str] = (),
+        country: str | None = None,
+        fuzzy: bool = True,
     ) -> str:
-        key = (name, country)
+        """Canonical name for ``name``.
+
+        ``fuzzy=False`` accepts only aliases and exact / normalised names: used for domestic
+        cups, where amateur clubs ("Lille Sud", "Cove Rangers") must not be absorbed by a
+        professional club with a similar name.
+        """
+        key = (name, country, fuzzy)
         if key not in self._cache:
-            self._cache[key] = self._match(name, list(alternatives), country)
+            self._cache[key] = self._match(name, list(alternatives), country, fuzzy)
         return self._cache[key]
 
-    def _match(self, name: str, alternatives: list[str], country: str | None) -> str:
+    def _match(self, name: str, alternatives: list[str], country: str | None, fuzzy: bool) -> str:
         def same_country(team: str) -> bool:
             # "Red Star" (Paris) must not swallow "Red Star Belgrade", nor Scotland's
             # Hibernian Malta's Hibernians: a known country has to agree.
@@ -316,7 +330,7 @@ class TeamMatcher:
         # 2) short names ("Red Star", "Real Sociedad") are ambiguous: only trusted when the
         #    club's country is known, so "Real Sociedad II" cannot become "Sociedad".
         alternatives = [a for a in alternatives if a and a != name]
-        if country is None:
+        if country is None or not fuzzy:
             alternatives = []
         for cand in alternatives:
             if cand in self.country and same_country(cand):
@@ -326,6 +340,8 @@ class TeamMatcher:
                 return hit
         candidates = [name, *alternatives]
 
+        if not fuzzy:
+            return name
         if country is not None:
             # Fuzzy matching only among clubs of the same country.
             pool = [t for t, c in self.country.items() if c == country]

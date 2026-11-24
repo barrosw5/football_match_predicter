@@ -7,9 +7,9 @@
 ![Next.js](https://img.shields.io/badge/Web-Next.js%20%2B%20TypeScript-0b0b0b)
 ![License](https://img.shields.io/badge/License-MIT-52514e)
 
-An end-to-end machine-learning system that forecasts football matches in **21 European leagues and the three UEFA club
-competitions** (Champions, Europa and Conference League), retrains itself every day, and publishes the forecasts,
-together with a **public, tamper-proof track record of every prediction**, to a static website.
+An end-to-end machine-learning system that forecasts football matches in **21 European leagues, 10 domestic cups and
+the three UEFA club competitions** (Champions, Europa and Conference League), retrains itself every day, and publishes
+the forecasts, together with a **public, tamper-proof track record of every prediction**, to a static website.
 
 **Live site:** https://barrosw5.github.io/football_match_predicter/
 
@@ -32,15 +32,24 @@ together with a **public, tamper-proof track record of every prediction**, to a 
   favourite; the track record counts who was right when they disagreed.
 - **Full score distribution.** Poisson goal models give the correct-score grid, expected goals, both-teams-to-score and
   over/under 2.5 for every fixture.
-- **Bilingual site** (English / Portuguese) with club crests, light and dark mode.
+- **Club Elo ranking** of ~450 clubs on one scale, with places gained or lost over the last week and month, the
+  rating trend and each squad's market value.
+- **Match pages with real statistics.** Each team's last 5/10 matches (goals, xG, shots, corners, yellow and red cards),
+  line-ups drawn on a pitch in their real formation, goal scorers and cards of finished matches, and each team's
+  previous starting XI before a fixture.
+- **Team and player pages.** Every ranked club has a page with its full match history since 2014, upcoming forecasts,
+  how the model did on its games, Elo and squad-value charts and the current squad; every player has a page with
+  profile, season goals/assists and a match-by-match log. Top scorers and assists for every competition.
+- **Bilingual site** (English / Portuguese) with club crests and a light / dark theme switch.
 
 ## How it works
 
 ```mermaid
 flowchart LR
     A["football-data.co.uk<br/>21 leagues since 2014<br/>results, stats, xG, odds"] --> C
-    B["ESPN public API<br/>UEFA competitions, fixtures,<br/>live scores, odds"] --> C
-    C["Unified match table<br/>~89k matches,<br/>canonical team names"] --> D["Feature engineering<br/>Elo, form, table, rest,<br/>market probabilities"]
+    B["ESPN public API<br/>UEFA + domestic cups, fixtures,<br/>live scores, odds, line-ups"] --> C
+    T["Transfermarkt open data<br/>player market values"] -.-> G
+    C["Unified match table<br/>~100k matches,<br/>canonical team names"] --> D["Feature engineering<br/>Elo, form, table, rest,<br/>congestion, market probabilities"]
     D --> E["XGBoost outcome classifier<br/>+ Poisson goal regressors"]
     E --> F["Predictions ledger<br/>frozen at kick-off,<br/>settled after full time"]
     F --> G["JSON export"]
@@ -49,28 +58,40 @@ flowchart LR
 ```
 
 1. **Data** ([`sources/`](src/football_predictor/sources)). football-data.co.uk provides results, shots, corners, cards,
-   bookmaker odds and (from 2026/27) xG for 16 main divisions plus 5 extra leagues. ESPN's public scoreboard API
-   provides every UEFA club match since 2014, upcoming fixtures for all competitions, live results and DraftKings
-   odds. Downloads are cached; historical seasons are fetched once.
-2. **Team names** ([`teams.py`](src/football_predictor/teams.py)). "Atlético Madrid", "Atletico Madrid" and
-   "Ath Madrid" must be the same club, while "Red Star Belgrade" must *not* become France's "Red Star" and
-   "Real Sociedad II" must not become "Real Sociedad". The matcher combines an alias table, accent-insensitive keys and
-   fuzzy matching restricted to clubs of the same country (inferred from each club's home stadium).
-3. **Features** ([`features.py`](src/football_predictor/features.py)). 59 features: cross-competition Elo with home
+   bookmaker odds and (from 2026/27) xG for 16 main divisions plus 5 extra leagues. ESPN's public API provides every
+   UEFA club match since 2014, 10 domestic cups (FA Cup, EFL Cup, Copa del Rey, DFB-Pokal, Coppa Italia, Coupe de
+   France, KNVB Cup, Scottish Cup and League Cup, Taça de Portugal), upcoming fixtures, live results, DraftKings odds,
+   line-ups and top scorers. Squad values come from the open
+   [transfermarkt-datasets](https://github.com/dcaribou/transfermarkt-datasets) project. Downloads are cached;
+   historical seasons are fetched once.
+2. **Team identity** ([`teams.py`](src/football_predictor/teams.py)). "Atlético Madrid", "Atletico Madrid" and
+   "Ath Madrid" must be the same club, while "Red Star Belgrade" must *not* become France's "Red Star", nor amateur
+   "Lille Sud" become Lille in the Coupe de France. ESPN uses one team id per club across all competitions, so ids
+   learned from league rosters identify cup and European opponents; names are only a fallback (alias table,
+   accent-insensitive keys, same-country fuzzy matching, and no fuzzy matching at all in domestic cups). Transfermarkt
+   clubs are linked through matching games (same day, country and score) rather than names.
+3. **Features** ([`features.py`](src/football_predictor/features.py)). 62 features: cross-competition Elo with home
    advantage and margin of victory, form over the last 5/10 games (points, goals, shots, corners, cards, xG), home-only
-   and away-only form, league position and points per game, rest days, competition scoring/draw rates and
-   margin-free market probabilities. Missing values (no odds for old European games, no xG before 2026) are left as
-   missing and handled natively by XGBoost.
+   and away-only form, league position and points per game, rest days and matches played in the last 14 days (league,
+   cup and European games all count, so a Champions League side's midweek fixtures are included), competition
+   scoring/draw rates, cup / UEFA flags and margin-free market probabilities. Missing values (no odds for old cup
+   games, no xG before 2026) are left as missing and handled natively by XGBoost.
 4. **Model** ([`model.py`](src/football_predictor/model.py)). An XGBoost multi-class classifier for 1X2, plus two
    XGBoost Poisson regressors for each side's expected goals. The published 1X2 blends the classifier (70%) with the
    Poisson-implied probabilities (30%). Training samples are weighted with a 4-year half-life.
 5. **Tracking** ([`tracking.py`](src/football_predictor/tracking.py)). Forecasts can be refreshed until kick-off and
    are frozen afterwards. Results are attached from ESPN (fast) or football-data (fallback). Matches decided in extra
    time or on penalties are excluded because the 90-minute score is unknown.
-6. **Website** ([`web/`](web)). Next.js 16 + TypeScript + Tailwind CSS, exported as static HTML (one page per fixture
-   and per settled match). Both languages are pre-rendered into every page and an inline script picks one before the
-   first paint (saved choice, else the browser language), so there is no flash and no duplicate routes. Charts are
-   hand-written SVG components with hover/keyboard tooltips and a colour-vision-deficiency-checked palette.
+6. **Ranking** ([`ranking.py`](src/football_predictor/ranking.py)). The Elo used by the model, replayed match by match
+   to rank every active club now, 7 days ago and 30 days ago, joined with Transfermarkt squad values and their history.
+   [`profiles.py`](src/football_predictor/profiles.py) assembles one profile per club (history, forecasts, squad) and
+   per player (ESPN squads + appearances from cached line-ups); player profiles are small JSON files loaded by a
+   single static player page, which keeps the export to a few thousand HTML files.
+7. **Website** ([`web/`](web)). Next.js 16 + TypeScript + Tailwind CSS, exported as static HTML (one page per fixture
+   and per settled match): fixtures, match pages (probabilities, correct-score grid, model vs bookmakers, recent form,
+   statistics, line-ups), Elo ranking, players, track record and methodology. Both languages and the colour theme are
+   chosen by an inline script before the first paint (saved choice, else browser / OS setting), so nothing flashes.
+   Charts are hand-written SVG components with hover/keyboard tooltips and a colour-vision-deficiency-checked palette.
 
 ## Results
 
@@ -109,13 +130,15 @@ The live numbers for the last 7/30/90 days are on the site's
 
 ```
 ├── src/football_predictor/     Python package (all production code)
-│   ├── sources/                football-data.co.uk + ESPN clients, HTTP retries & caching
+│   ├── sources/                football-data.co.uk, ESPN and Transfermarkt clients, retries & caching
 │   ├── config.py               competitions, paths, model settings
 │   ├── teams.py                cross-source team-name matching
 │   ├── dataset.py              unified match table
 │   ├── features.py             leakage-free feature engineering
 │   ├── model.py                XGBoost classifier + Poisson goal models
 │   ├── evaluation.py           accuracy, log loss, Brier, RPS, calibration
+│   ├── ranking.py              club Elo ranking and its movement over time
+│   ├── profiles.py             team and player pages (history, squads, appearances)
 │   ├── predict.py              fixtures to forecasts
 │   ├── tracking.py             predictions ledger (freeze, settle, score)
 │   ├── export.py               JSON for the website
@@ -182,21 +205,28 @@ directory `out`); every bot commit then triggers a redeploy.
 ## Data sources & credits
 
 - [football-data.co.uk](https://www.football-data.co.uk/): historical results, match statistics, xG and odds.
-- ESPN's public scoreboard API: UEFA competitions, fixtures, live results and DraftKings odds. Club crests are loaded
-  from ESPN's image CDN and belong to their respective clubs.
+- ESPN's public API: UEFA competitions, domestic cups, fixtures, live results, DraftKings odds, line-ups and top
+  scorers. Club crests are loaded from ESPN's image CDN and belong to their respective clubs.
+- [transfermarkt-datasets](https://github.com/dcaribou/transfermarkt-datasets) (CC0): player market values, used for
+  squad values. The public files were last refreshed in mid-2026, so values are shown with their date.
 
 Data is used for non-commercial, educational purposes.
 
 ## Limitations & ideas
 
-- No team news (injuries, suspensions, rotation) and no line-ups: the main information the market has and the model
-  does not.
+- No injuries or confirmed line-ups before kick-off (free sources publish line-ups only about an hour before the
+  match): the main information the market has and the model does not. Match pages show each team's previous
+  starting XI as a hint.
+- Squad values are a proxy for budget; club budgets themselves are not published in any open dataset.
 - xG is only available from 2026/27, so its features will become more useful as seasons accumulate.
 - Clubs from countries outside the dataset (e.g. Ukraine, Croatia) are rated from their European matches only.
 - Next steps: Dixon-Coles low-score correction, player-level availability data, probability calibration per
   competition.
 
 ## Version history
+
+**v2.1 (2026)**: domestic cups, club Elo ranking, squad values, team and player pages, line-ups on a pitch,
+top scorers, match statistics card, matches-in-the-last-14-days feature, light / dark theme.
 
 **v2.0 (2026)**: complete rewrite. Python package with tests and CLI; ESPN integration for the UEFA competitions;
 leakage-free features; walk-forward validation; prediction ledger and track record; automated daily pipeline; new

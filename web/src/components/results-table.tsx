@@ -110,10 +110,11 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+      {/* On large screens the page itself scrolls the table, so the header can stay pinned. */}
+      <div className="overflow-x-auto rounded-xl border border-line bg-surface lg:overflow-visible">
         <table className="tnum w-full min-w-[60rem] text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs text-ink-3">
+          <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-surface [&_th]:shadow-[inset_0_-1px_0_var(--line)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
+            <tr className="text-left text-xs text-ink-3">
               <th className="px-4 py-2.5 font-normal">
                 <T en="Date" pt="Data" />
               </th>

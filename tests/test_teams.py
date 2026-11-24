@@ -70,3 +70,36 @@ def test_espn_spelling_variants_join_the_domestic_history():
     m = TeamMatcher({"FC Copenhagen": "Denmark", "St Truiden": "Belgium"})
     assert m.match("F.C. København", country="Denmark") == "FC Copenhagen"
     assert m.match("Sint-Truidense", country="Belgium") == "St Truiden"
+
+
+def test_strict_mode_keeps_amateur_clubs_apart():
+    m = TeamMatcher({"Lille": "France", "Rangers": "Scotland", "Norwich": "England"})
+    assert m.match("Lille Sud", country="France", fuzzy=False) == "Lille Sud"
+    assert m.match("Cove Rangers", country="Scotland", fuzzy=False) == "Cove Rangers"
+    assert m.match("Northwich Victoria", country="England", fuzzy=False) == "Northwich Victoria"
+    assert m.match("Lille", country="France", fuzzy=False) == "Lille"
+
+
+def test_espn_id_map_wins_over_names():
+    m = TeamMatcher({"Luton": "England"})
+    m.id_map["301"] = "Luton"
+    import pandas as pd
+
+    from football_predictor.dataset import map_espn_names
+
+    events = pd.DataFrame(
+        {
+            "competition": ["FAC"],
+            "home_espn": ["Luton Town"],
+            "away_espn": ["Cove Rangers"],
+            "home_alt": ["Luton"],
+            "away_alt": ["Cove"],
+            "home_espn_id": ["301"],
+            "away_espn_id": ["999"],
+            "venue_country": ["England"],
+            "neutral": [False],
+        }
+    )
+    out = map_espn_names(events, m)
+    assert out.loc[0, "home_team"] == "Luton"
+    assert out.loc[0, "away_team"] == "Cove Rangers"

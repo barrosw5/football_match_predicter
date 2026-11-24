@@ -82,3 +82,11 @@ def test_form_index_lists_previous_matches_oldest_first(small_league):
     }
     later = form.last("A", pd.Timestamp("2020-09-01"))
     assert later[-1]["opponent"] == "Club C" and later[-1]["opponentLogo"] == "99"
+
+
+def test_games_in_last_14_days_counts_every_competition(small_league):
+    frame, _ = build_features(small_league)
+    row = frame[(frame["home_team"] == "A") & (frame["date"] == "2020-08-15")].iloc[0]
+    assert row["home_games_14d"] == 2  # 08-01 and 08-08
+    first = frame.iloc[0]
+    assert first["home_games_14d"] == 0

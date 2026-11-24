@@ -37,6 +37,21 @@ export interface FormGame {
   opponent: string;
   opponentLogo: string | null;
   competition: string; // competition code
+  /** Present on match pages (last 10 matches); null values = not recorded by the source. */
+  stats?: MatchStats;
+}
+
+export interface MatchStats {
+  xgFor: number | null;
+  xgAgainst: number | null;
+  shotsFor: number | null;
+  shotsAgainst: number | null;
+  sotFor: number | null;
+  sotAgainst: number | null;
+  cornersFor: number | null;
+  cornersAgainst: number | null;
+  yellow: number | null;
+  red: number | null;
 }
 
 export interface Team {
@@ -46,6 +61,8 @@ export interface Team {
   /** Last matches before kick-off, oldest first. */
   form?: FormGame[];
   logo?: string | null; // ESPN team id (crest)
+  /** Squad market value in EUR millions (Transfermarkt open data). */
+  value?: number | null;
 }
 
 interface ForecastBase {
@@ -134,4 +151,165 @@ export interface Meta {
   competitions: (Competition & { kind: "league" | "cup" })[];
   counts: { matchesInDatabase: number; trackedPredictions: number; settled: number; upcoming: number };
   dataRange: { from: string; to: string };
+}
+
+// ---------------------------------------------------------------- ranking
+
+export interface RankingClub {
+  rank: number;
+  key: string;
+  name: string;
+  logo: string | null;
+  country: string | null;
+  league: string | null; // competition code
+  elo: number;
+  change7: number | null; // places gained (+) or lost (-)
+  change30: number | null;
+  elo30: number | null; // rating change over 30 days
+  lastPlayed: string;
+  history: number[]; // rating after each of the last 10 matches
+  value: number | null; // EUR millions
+  valueChange12m: number | null;
+  valueHistory: number[];
+}
+
+export interface Ranking {
+  generatedAt: string;
+  valueDate: string | null;
+  clubs: RankingClub[];
+}
+
+// ---------------------------------------------------------------- players
+
+export interface Leader {
+  id?: string | null;
+  name: string;
+  team: string;
+  teamLogo: string | null;
+  matches: number | null;
+  value: number;
+}
+
+export interface PlayersData {
+  generatedAt: string;
+  competitions: Record<string, { season: string | null; goals: Leader[]; assists: Leader[] }>;
+}
+
+// ---------------------------------------------------------------- line-ups
+
+export interface LineupPlayer {
+  id?: string | null; // ESPN athlete id
+  place?: number | null; // formation slot (1 = goalkeeper)
+  name: string;
+  pos: string | null;
+  jersey: string | null;
+  starter: boolean;
+  subIn: boolean;
+  subOut: boolean;
+}
+
+export interface MatchEvent {
+  minute: string | null;
+  type: "goal" | "penalty" | "own_goal" | "yellow" | "red" | "sub";
+  side: "home" | "away";
+  player: string | null;
+  other: string | null; // assist, or the player replaced
+}
+
+export interface MatchSummary {
+  formations: { home?: string | null; away?: string | null };
+  lineups: { home: LineupPlayer[]; away: LineupPlayer[] };
+  events: MatchEvent[];
+}
+
+export interface LastXI {
+  date: string;
+  opponent: string;
+  formation: string | null;
+  players: LineupPlayer[];
+}
+
+// ---------------------------------------------------------------- team & player pages
+
+export interface SquadPlayer {
+  id: string;
+  name: string;
+  pos: string | null;
+  posName: string | null;
+  jersey: string | null;
+  age: number | null;
+  birth: string | null;
+  nationality: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  goals?: number | null;
+  assists?: number | null;
+  apps?: number;
+}
+
+/** [date, competition, home (1/0), opponent, opponent slug, goals for, goals against, match page id] */
+export type HistoryRow = [string, string, number, string, string | null, number, number, string | null];
+
+export interface TeamProfile {
+  key: string;
+  slug: string;
+  name: string;
+  logo: string | null;
+  country: string | null;
+  league: string | null;
+  rank: number;
+  elo: number;
+  change7: number | null;
+  change30: number | null;
+  elo30: number | null;
+  value: number | null;
+  valueDate: string | null;
+  valueHistory: { date: string; value: number }[];
+  eloHistory: [string, number][];
+  history: HistoryRow[];
+  upcoming: {
+    id: string;
+    kickoff: string;
+    competition: string;
+    home: boolean;
+    opponent: string;
+    opponentSlug: string | null;
+    win: number;
+    draw: number;
+    loss: number;
+  }[];
+  record: {
+    id: string | null;
+    date: string;
+    competition: string;
+    home: boolean;
+    opponent: string;
+    goalsFor: number;
+    goalsAgainst: number;
+    pick: "H" | "D" | "A";
+    correct: boolean;
+  }[];
+  squad: SquadPlayer[];
+}
+
+export interface PlayerAppearance {
+  date: string;
+  matchId: string | null;
+  competition: string;
+  home: boolean;
+  opponent: string;
+  opponentLogo: string | null;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  started: boolean;
+  goals: number;
+  assists: number;
+  yellow: boolean;
+  red: boolean;
+}
+
+export interface PlayerProfile extends SquadPlayer {
+  team: { slug: string; name: string; logo: string | null };
+  season: { goals: Record<string, number>; assists: Record<string, number> };
+  appearances: PlayerAppearance[];
 }

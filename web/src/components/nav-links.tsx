@@ -7,6 +7,8 @@ import { T } from "@/lib/i18n";
 
 const LINKS = [
   { href: "/", en: "Fixtures", pt: "Jogos" },
+  { href: "/ranking/", en: "Ranking", pt: "Ranking" },
+  { href: "/players/", en: "Players", pt: "Jogadores" },
   { href: "/performance/", en: "Track record", pt: "Histórico" },
   { href: "/methodology/", en: "How it works", pt: "Como funciona" },
 ];
@@ -14,7 +16,7 @@ const LINKS = [
 export function NavLinks() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="-mx-2 flex text-sm">
+    <nav aria-label="Main" className="-mx-2 flex min-w-0 max-w-full overflow-x-auto whitespace-nowrap text-sm">
       {LINKS.map(({ href, en, pt }) => {
         const active =
           href === "/" ? pathname === "/" || pathname.startsWith("/match") : pathname.startsWith(href.replace(/\/$/, ""));

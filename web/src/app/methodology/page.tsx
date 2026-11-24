@@ -47,12 +47,12 @@ const FEATURES = [
     pt: ["Classificação", "Posição, pontos e diferença de golos por jogo nesta época."],
   },
   {
-    en: ["Schedule", "Days since each team's previous match."],
-    pt: ["Calendário", "Dias desde o jogo anterior de cada equipa."],
+    en: ["Schedule", "Days since each team's previous match and matches played in the last 14 days. League, cup and European games all count, so midweek Champions League or cup fixtures are included."],
+    pt: ["Calendário", "Dias desde o jogo anterior de cada equipa e jogos disputados nos últimos 14 dias. Contam jogos de liga, de taça e europeus, por isso os jogos a meio da semana (Liga dos Campeões, taças) entram nas contas."],
   },
   {
-    en: ["Competition context", "Recent goals per game, home-win and draw rates of the competition; cup / tier flags."],
-    pt: ["Contexto da competição", "Golos por jogo, percentagem de vitórias em casa e de empates na competição; taça ou divisão."],
+    en: ["Competition context", "Recent goals per game, home-win and draw rates of the competition; league tier, domestic cup and UEFA flags."],
+    pt: ["Contexto da competição", "Golos por jogo, percentagem de vitórias em casa e de empates na competição; divisão, taça nacional ou competição UEFA."],
   },
   {
     en: ["Market", "Bookmaker odds converted to probabilities with the margin removed, when available."],
@@ -74,7 +74,8 @@ export default function MethodologyPage() {
   const meta = getMeta();
   const evaluation = getEvaluation();
   const leagues = meta.competitions.filter((c) => c.kind === "league");
-  const cups = meta.competitions.filter((c) => c.kind === "cup");
+  const uefa = meta.competitions.filter((c) => c.kind === "cup" && c.country === "Europe");
+  const cups = meta.competitions.filter((c) => c.kind === "cup" && c.country !== "Europe");
 
   return (
     <div className="max-w-4xl">
@@ -116,8 +117,8 @@ export default function MethodologyPage() {
           </Card>
           <Card title="ESPN">
             <T
-              en={`${cups.map((c) => competitionName(c.code, c.name, "en")).join(", ")} since 2014, plus every fixture, kick-off time, live result, club crest and DraftKings odds for the coming week.`}
-              pt={`${cups.map((c) => competitionName(c.code, c.name, "pt")).join(", ")} desde 2014, mais o calendário, horários, resultados em direto, emblemas dos clubes e odds DraftKings da próxima semana.`}
+              en={`${uefa.map((c) => competitionName(c.code, c.name, "en")).join(", ")} since 2014 and ${cups.length} domestic cups (${cups.map((c) => c.name).join(", ")}), plus every fixture, kick-off time, live result, club crest and DraftKings odds for the coming week. Clubs are matched across competitions by their ESPN team id.`}
+              pt={`${uefa.map((c) => competitionName(c.code, c.name, "pt")).join(", ")} desde 2014 e ${cups.length} taças nacionais (${cups.map((c) => competitionName(c.code, c.name, "pt")).join(", ")}), mais o calendário, horários, resultados em direto, emblemas dos clubes e odds DraftKings da próxima semana. Os clubes são identificados entre competições pelo ID de equipa da ESPN.`}
             />
           </Card>
         </dl>

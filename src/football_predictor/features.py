@@ -241,13 +241,21 @@ def form_features(df: pd.DataFrame) -> pd.DataFrame:
     parts.append(_attach(rows, venue, "home_team", "home_", by_extra={"is_home": 1}))
     parts.append(_attach(rows, venue, "away_team", "away_", by_extra={"is_home": 0}))
 
-    # Days since previous match (fatigue / rust) and matches in the last 30 days.
+    # Fatigue / rust: days since the previous match and matches in the last 14 days. Every
+    # competition counts (league, domestic cups, UEFA), so midweek cup games are included.
     last = long[["date", "team"]].assign(last_played=long["date"])
+    played_so_far = long[["date", "team"]].assign(n=long.groupby("team").cumcount() + 1.0)
+    two_weeks_ago = rows.assign(date=rows["date"] - pd.Timedelta(days=14))
     for side in ("home", "away"):
         prev = _attach(rows, last, f"{side}_team", "")
+        now_n = _attach(rows, played_so_far, f"{side}_team", "")["n"].fillna(0)
+        then_n = _attach(two_weeks_ago, played_so_far, f"{side}_team", "")["n"].fillna(0)
         parts.append(
             pd.DataFrame(
-                {f"{side}_rest": (rows["date"] - prev["last_played"]).dt.days.clip(upper=21)},
+                {
+                    f"{side}_rest": (rows["date"] - prev["last_played"]).dt.days.clip(upper=21),
+                    f"{side}_games_14d": now_n - then_n,
+                },
                 index=rows.index,
             )
         )
@@ -315,6 +323,7 @@ BASE_FEATURES = [
     "mkt_p_draw",
     "mkt_p_away",
     "is_cup",
+    "is_uefa",
     "tier",
     "neutral",
     "comp_avg_goals",
@@ -322,6 +331,8 @@ BASE_FEATURES = [
     "comp_draw_rate",
     "home_rest",
     "away_rest",
+    "home_games_14d",
+    "away_games_14d",
     "home_pos",
     "away_pos",
     "home_ppg_season",
@@ -371,6 +382,9 @@ def build_features(
     ]
     frame = pd.concat([df, *parts], axis=1)
     frame["is_cup"] = frame["competition"].map(lambda c: int(COMPETITIONS_BY_CODE[c].kind == "cup"))
+    frame["is_uefa"] = frame["competition"].map(
+        lambda c: int(COMPETITIONS_BY_CODE[c].country == "Europe")
+    )
     frame["tier"] = frame["competition"].map(lambda c: COMPETITIONS_BY_CODE[c].tier)
     frame["neutral"] = frame["neutral"].astype(int)
     frame["target"] = frame["result"].map(RESULT_TO_INT)

@@ -83,8 +83,17 @@ def team_countries(matches: pd.DataFrame) -> dict[str, str]:
     return {team: c.most_common(1)[0][0] for team, c in counts.items()}
 
 
-def build_matcher(domestic: pd.DataFrame) -> TeamMatcher:
-    return TeamMatcher(team_countries(domestic))
+def build_matcher(domestic: pd.DataFrame, league_teams: pd.DataFrame | None = None) -> TeamMatcher:
+    """Name matcher for canonical clubs, plus an ESPN-id map learned from league rosters."""
+    matcher = TeamMatcher(team_countries(domestic))
+    if league_teams is not None and not league_teams.empty:
+        known = set(matcher.country)
+        for r in league_teams.sort_values("year").itertuples():
+            country = COMPETITIONS_BY_CODE[r.competition].country
+            team = matcher.match(r.name, alternatives=[r.alt], country=country)
+            if team in known:
+                matcher.id_map[str(r.espn_team_id)] = team
+    return matcher
 
 
 def map_espn_names(events: pd.DataFrame, matcher: TeamMatcher) -> pd.DataFrame:
@@ -113,9 +122,17 @@ def map_espn_names(events: pd.DataFrame, matcher: TeamMatcher) -> pd.DataFrame:
             events["competition"],
             strict=False,
         ):
+            known_id = matcher.id_map.get(str(tid))
+            if known_id is not None:
+                names.append(known_id)
+                continue
             cfg = COMPETITIONS_BY_CODE[comp]
-            country = cfg.country if cfg.kind == "league" else country_by_id.get(tid)
-            names.append(matcher.match(name, alternatives=[alt], country=country))
+            # Domestic competitions know their country; UEFA clubs get it from their stadium.
+            country = cfg.country if cfg.country != "Europe" else country_by_id.get(tid)
+            domestic_cup = cfg.kind == "cup" and cfg.country != "Europe"
+            names.append(
+                matcher.match(name, alternatives=[alt], country=country, fuzzy=not domestic_cup)
+            )
         events[f"{side}_team"] = names
     return events
 
@@ -142,12 +159,14 @@ def build_matches(
     domestic = football_data.load_all(refresh_current=refresh, today=today)
     log.info("  %d domestic matches", len(domestic))
 
-    log.info("Loading UEFA competitions from ESPN ...")
+    log.info("Loading UEFA competitions and domestic cups from ESPN ...")
     cups_raw = espn.load_cup_history(refresh_current=refresh, today=today)
-    matcher = build_matcher(domestic)
+    league_teams = espn.load_league_teams(refresh_current=refresh, today=today)
+    matcher = build_matcher(domestic, league_teams)
+    log.info("  %d ESPN team ids mapped to clubs", len(matcher.id_map))
     cups = _espn_to_matches(map_espn_names(cups_raw, matcher))
     log.info(
-        "  %d UEFA matches (%d unique clubs)",
+        "  %d cup matches (%d unique clubs)",
         len(cups),
         pd.concat([cups["home_team"], cups["away_team"]]).nunique(),
     )

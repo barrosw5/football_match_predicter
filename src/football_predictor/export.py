@@ -9,8 +9,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import COMPETITIONS, COMPETITIONS_BY_CODE, VALUE_EDGE, WEB_DATA_DIR
+from .config import (
+    COMPETITIONS,
+    COMPETITIONS_BY_CODE,
+    VALUE_EDGE,
+    WEB_BUILD_DATA_DIR,
+    WEB_DATA_DIR,
+)
+from .dataset import match_key
 from .predict import FormIndex
+from .profiles import build_profiles
+from .ranking import build_ranking
+from .sources import transfermarkt
 from .tracking import scored
 
 WINDOWS = {"7d": 7, "30d": 30, "90d": 90, "all": None}
@@ -88,7 +98,7 @@ def _market(row) -> dict | None:
     return {"probs": probs, "pick": pick}
 
 
-def _team(row, side: str, form: FormIndex | None) -> dict:
+def _team(row, side: str, form: FormIndex | None, values: dict | None = None) -> dict:
     name = (
         row[f"{side}_display"] if isinstance(row[f"{side}_display"], str) else row[f"{side}_team"]
     )
@@ -98,6 +108,7 @@ def _team(row, side: str, form: FormIndex | None) -> dict:
         "key": row[f"{side}_team"],
         "elo": _num(row[f"{side}_elo"], 0),
         "logo": str(tid) if isinstance(tid, str) and tid else None,
+        "value": (values or {}).get(row[f"{side}_team"], {}).get("value"),
     }
     if form is not None:
         team["form"] = form.last(row[f"{side}_team"], _match_day(row))
@@ -108,41 +119,47 @@ def _match_day(row) -> pd.Timestamp:
     return pd.Timestamp(row["kickoff"]).tz_convert("UTC").tz_localize(None).normalize()
 
 
-def fixtures_payload(ledger: pd.DataFrame, form: FormIndex, now: pd.Timestamp) -> list[dict]:
+def fixtures_payload(
+    ledger: pd.DataFrame, form: FormIndex, now: pd.Timestamp, values: dict | None = None
+) -> list[dict]:
     pending = ledger[ledger["status"] == "pending"].sort_values("kickoff")
     out = []
     for _, row in pending.iterrows():
         item = _base(row)
         item["status"] = "upcoming" if row["kickoff"] > now else "awaiting_result"
-        item["home"] = _team(row, "home", form)
-        item["away"] = _team(row, "away", form)
+        item["home"] = _team(row, "home", form, values)
+        item["away"] = _team(row, "away", form, values)
         out.append(item)
     return out
 
 
-def results_form_payload(sc: pd.DataFrame, form: FormIndex, now: pd.Timestamp) -> dict:
-    """Pre-match form of both teams for every published result (read at build time only)."""
-    if sc.empty:
-        return {}
-    recent = sc[sc["kickoff"] >= now - pd.Timedelta(days=RESULTS_HISTORY_DAYS)]
-    return {
-        row["match_id"]: {
-            "home": form.last(row["home_team"], _match_day(row)),
-            "away": form.last(row["away_team"], _match_day(row)),
-        }
-        for _, row in recent.iterrows()
-    }
+def match_stats_payload(
+    ledger: pd.DataFrame, sc: pd.DataFrame, form: FormIndex, now: pd.Timestamp
+) -> dict:
+    """Both teams' last 10 matches with statistics, for every match page (build time only)."""
+    rows = [ledger[ledger["status"] == "pending"]]
+    if not sc.empty:
+        rows.append(sc[sc["kickoff"] >= now - pd.Timedelta(days=RESULTS_HISTORY_DAYS)])
+    out = {}
+    for frame in rows:
+        for _, row in frame.iterrows():
+            day = _match_day(row)
+            out[row["match_id"]] = {
+                "home": form.last(row["home_team"], day, 10, detailed=True),
+                "away": form.last(row["away_team"], day, 10, detailed=True),
+            }
+    return out
 
 
-def results_payload(sc: pd.DataFrame, now: pd.Timestamp) -> list[dict]:
+def results_payload(sc: pd.DataFrame, now: pd.Timestamp, values: dict | None = None) -> list[dict]:
     recent = sc[sc["kickoff"] >= now - pd.Timedelta(days=RESULTS_HISTORY_DAYS)].sort_values(
         "kickoff", ascending=False
     )
     out = []
     for _, row in recent.iterrows():
         item = _base(row)
-        item["home"] = _team(row, "home", None)
-        item["away"] = _team(row, "away", None)
+        item["home"] = _team(row, "home", None, values)
+        item["away"] = _team(row, "away", None, values)
         item.update(
             {
                 "score": {"home": int(row["home_goals"]), "away": int(row["away_goals"])},
@@ -288,25 +305,103 @@ def performance_payload(sc: pd.DataFrame, now: pd.Timestamp) -> dict:
     return {"windows": windows, "daily": daily}
 
 
+def ranking_payload(
+    matches: pd.DataFrame,
+    now: pd.Timestamp,
+    display_names: dict[str, str] | None,
+    team_ids: dict[str, str] | None,
+    values: dict,
+) -> list[dict]:
+    rows = build_ranking(matches, now, display_names, team_ids)
+    for r in rows:
+        v = values.get(r["key"])
+        r["value"] = v["value"] if v else None
+        r["valueChange12m"] = v["change12m"] if v else None
+        r["valueHistory"] = [h["value"] for h in v["history"]] if v else []
+    return rows
+
+
+def lineups_payload(
+    ledger: pd.DataFrame,
+    sc: pd.DataFrame,
+    now: pd.Timestamp,
+    summaries: dict[str, dict] | None,
+    events: pd.DataFrame | None,
+) -> dict:
+    """Line-ups/events of published results and each team's last starting XI before a fixture."""
+    out: dict = {"results": {}, "lastXI": {}}
+    if not summaries or events is None or events.empty:
+        return out
+    ev = events[events["espn_id"].isin(summaries)].copy()
+    ev["match_id"] = [
+        match_key(d, h, a)
+        for d, h, a in zip(ev["date"], ev["home_team"], ev["away_team"], strict=False)
+    ]
+    by_match = dict(zip(ev["match_id"], ev["espn_id"], strict=False))
+    if not sc.empty:
+        published = sc[sc["kickoff"] >= now - pd.Timedelta(days=RESULTS_HISTORY_DAYS)]["match_id"]
+        out["results"] = {m: summaries[by_match[m]] for m in published if m in by_match}
+
+    team_games: dict[str, list] = {}
+    for r in ev.itertuples():
+        s = summaries[r.espn_id]
+        for side, tid, opp in (
+            ("home", r.home_espn_id, r.away_espn),
+            ("away", r.away_espn_id, r.home_espn),
+        ):
+            team_games.setdefault(str(tid), []).append((r.kickoff, s, side, opp))
+    for games in team_games.values():
+        games.sort(key=lambda g: g[0])
+    for _, row in ledger[ledger["status"] == "pending"].iterrows():
+        entry = {}
+        for side in ("home", "away"):
+            games = [
+                g for g in team_games.get(str(row[f"{side}_espn_id"]), []) if g[0] < row["kickoff"]
+            ]
+            if games:
+                kickoff, s, played_as, opponent = games[-1]
+                entry[side] = {
+                    "date": f"{kickoff:%Y-%m-%d}",
+                    "opponent": opponent,
+                    "formation": s["formations"].get(played_as),
+                    "players": [p for p in s["lineups"][played_as] if p["starter"]],
+                }
+        if entry:
+            out["lastXI"][row["match_id"]] = entry
+    return out
+
+
 def export_site_data(
     ledger: pd.DataFrame,
     matches: pd.DataFrame,
     model_meta: dict,
     now: pd.Timestamp,
     out_dir: Path = WEB_DATA_DIR,
+    build_dir: Path = WEB_BUILD_DATA_DIR,
     display_names: dict[str, str] | None = None,
     team_ids: dict[str, str] | None = None,
+    summaries: dict[str, dict] | None = None,
+    espn_events: pd.DataFrame | None = None,
+    leaders: dict | None = None,
+    rosters: dict[str, list[dict]] | None = None,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     sc = scored(ledger)
     generated = _iso(now)
     form = FormIndex(matches, display_names, team_ids)
-    fixtures = fixtures_payload(ledger, form, now)
+    try:
+        values = transfermarkt.squad_values(matches)
+    except Exception:  # optional data
+        values = {}
+    value_date = next(iter(values.values()))["date"] if values else None
+    fixtures = fixtures_payload(ledger, form, now, values)
+    results = results_payload(sc, now, values)
+    ranking = ranking_payload(matches, now, display_names, team_ids, values)
     payloads = {
         "fixtures.json": {"generatedAt": generated, "fixtures": fixtures},
-        "results.json": {"generatedAt": generated, "results": results_payload(sc, now)},
+        "results.json": {"generatedAt": generated, "results": results},
+        "ranking.json": {"generatedAt": generated, "valueDate": value_date, "clubs": ranking},
         "performance.json": {"generatedAt": generated, **performance_payload(sc, now)},
-        "form.json": results_form_payload(sc, form, now),
         "meta.json": {
             "generatedAt": generated,
             "model": model_meta,
@@ -327,7 +422,55 @@ def export_site_data(
             },
         },
     }
+    if leaders:
+        payloads["players.json"] = {"generatedAt": generated, "competitions": leaders}
     for name, payload in payloads.items():
         (out_dir / name).write_text(
             json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
         )
+    # Larger data that only the static build needs: never served to visitors as a whole.
+    build_dir.mkdir(parents=True, exist_ok=True)
+    (build_dir / "match-stats.json").write_text(
+        json.dumps(
+            match_stats_payload(ledger, sc, form, now), ensure_ascii=False, separators=(",", ":")
+        ),
+        encoding="utf-8",
+    )
+    (build_dir / "lineups.json").write_text(
+        json.dumps(
+            lineups_payload(ledger, sc, now, summaries, espn_events),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+        encoding="utf-8",
+    )
+    teams, players = build_profiles(
+        matches=matches,
+        ledger=ledger,
+        scored_rows=sc,
+        ranking=ranking,
+        values=values,
+        rosters=rosters or {},
+        summaries=summaries,
+        events=espn_events,
+        leaders=leaders,
+        display_names=display_names or {},
+        team_ids=team_ids or {},
+        now=now,
+        published_ids={f["id"] for f in fixtures} | {r["id"] for r in results},
+    )
+    (build_dir / "teams.json").write_text(
+        json.dumps(teams, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
+    # One small file per player, fetched by the browser on the player page.
+    player_dir = out_dir / "player"
+    player_dir.mkdir(exist_ok=True)
+    for old in player_dir.glob("*.json"):
+        old.unlink()
+    for pid, profile in players.items():
+        (player_dir / f"{pid}.json").write_text(
+            json.dumps(profile, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+        )
+    stale = out_dir / "form.json"
+    if stale.exists():
+        stale.unlink()

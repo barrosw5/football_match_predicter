@@ -16,7 +16,8 @@ const GROUPS: Group[] = [
   { id: "all", en: "All", pt: "Todos", codes: null },
   { id: "uefa", en: "UEFA", pt: "UEFA", codes: ["CL", "EL", "ECL"] },
   { id: "top5", en: "Big five", pt: "Top 5", codes: ["E0", "SP1", "D1", "I1", "F1"] },
-  { id: "pt", en: "Portugal", pt: "Portugal", codes: ["P1"] },
+  { id: "cups", en: "Cups", pt: "Taças", codes: ["PTC", "FAC", "EFLC", "CDR", "DFBP", "CI", "CDF", "KNVB", "SCC", "SLC"] },
+  { id: "pt", en: "Portugal", pt: "Portugal", codes: ["P1", "PTC"] },
 ];
 
 export function FixtureBrowser({ fixtures }: { fixtures: Fixture[] }) {

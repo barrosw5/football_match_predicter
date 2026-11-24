@@ -19,6 +19,7 @@ from .config import (
     COMPETITIONS_BY_CODE,
     FIXTURE_DAYS_AHEAD,
     MODEL_PATH,
+    RAW_DIR,
     RESULT_DAYS_BACK,
     TEAM_DIRECTORY_PATH,
 )
@@ -26,7 +27,6 @@ from .dataset import (
     MATCH_COLUMNS,
     build_matcher,
     build_matches,
-    load_matches,
     map_espn_names,
     match_key,
 )
@@ -96,7 +96,8 @@ def supplement_with_espn(
 
 def load_live_context(today: date, *, refresh: bool = True) -> LiveContext:
     matches = build_matches(refresh=refresh, today=today)
-    matcher = build_matcher(matches[matches["competition"].map(_is_league)])
+    league_teams = espn.load_league_teams(refresh_current=False, today=today)
+    matcher = build_matcher(matches[matches["competition"].map(_is_league)], league_teams)
     raw_events = espn.load_current(today, RESULT_DAYS_BACK, FIXTURE_DAYS_AHEAD, refresh=refresh)
     events = map_espn_names(raw_events, matcher)
     matches = supplement_with_espn(matches, events, matcher)
@@ -228,6 +229,11 @@ def run(*, today: date | None = None, refresh: bool = True, backtest_days: int =
 
     save_ledger(ledger)
     save_team_directory(ctx.display_names, ctx.team_ids)
+    summaries = (
+        espn.load_summaries(ctx.events) if refresh else espn.load_summaries(ctx.events, max_new=0)
+    )
+    leaders = espn.load_leaders() if refresh else None
+    rosters = espn.load_rosters(roster_targets(ctx)) if refresh else cached_rosters()
     export_site_data(
         load_ledger(),
         ctx.matches,
@@ -235,6 +241,10 @@ def run(*, today: date | None = None, refresh: bool = True, backtest_days: int =
         now,
         display_names=ctx.display_names,
         team_ids=ctx.team_ids,
+        summaries=summaries,
+        espn_events=ctx.events,
+        leaders=leaders,
+        rosters=rosters,
     )
     log.info("Done: ledger has %d forecasts", len(ledger))
 
@@ -243,8 +253,40 @@ def export_only() -> None:
     """Re-export website JSON from the saved ledger (no downloads, no training)."""
     now = pd.Timestamp.now(tz="UTC").floor("min")
     meta = MatchModel.load(MODEL_PATH).metadata if MODEL_PATH.exists() else {}
-    display, ids = load_team_directory()
-    export_site_data(load_ledger(), load_matches(), meta, now, display_names=display, team_ids=ids)
+    ctx = load_live_context(now.date(), refresh=False)
+    export_site_data(
+        load_ledger(),
+        ctx.matches,
+        meta,
+        now,
+        display_names=ctx.display_names,
+        team_ids=ctx.team_ids,
+        summaries=espn.load_summaries(ctx.events, max_new=0),
+        espn_events=ctx.events,
+        rosters=cached_rosters(),
+    )
+
+
+def roster_targets(ctx: LiveContext) -> dict[str, str]:
+    """ESPN team id -> competition slug code, for every club active in the last 400 days."""
+    recent = ctx.matches[ctx.matches["date"] > ctx.matches["date"].max() - pd.Timedelta(days=400)]
+    targets: dict[str, str] = {}
+    for comp_filter in (_is_league, lambda c: COMPETITIONS_BY_CODE[c].country == "Europe"):
+        rows = recent[recent["competition"].map(comp_filter)].sort_values("date")
+        for side in ("home_team", "away_team"):
+            for team, comp in zip(rows[side], rows["competition"], strict=False):
+                tid = ctx.team_ids.get(team)
+                if tid and tid not in targets:
+                    targets[tid] = comp
+    return targets
+
+
+def cached_rosters() -> dict[str, list[dict]]:
+    """Squads already downloaded (offline export)."""
+    folder = RAW_DIR / "espn_rosters"
+    if not folder.exists():
+        return {}
+    return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in folder.glob("*.json")}
 
 
 def save_team_directory(display: dict[str, str], ids: dict[str, str]) -> None:

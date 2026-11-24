@@ -126,6 +126,21 @@ class FormIndex:
                         "gf": played[f"{side}_goals"].astype(int).to_numpy(),
                         "ga": played[f"{opp}_goals"].astype(int).to_numpy(),
                         "competition": played["competition"].to_numpy(),
+                        **{
+                            key: played[col].to_numpy(dtype=float)
+                            for key, col in (
+                                ("xg_for", f"{side}_xg"),
+                                ("xg_against", f"{opp}_xg"),
+                                ("shots_for", f"{side}_shots"),
+                                ("shots_against", f"{opp}_shots"),
+                                ("sot_for", f"{side}_sot"),
+                                ("sot_against", f"{opp}_sot"),
+                                ("corners_for", f"{side}_corners"),
+                                ("corners_against", f"{opp}_corners"),
+                                ("yellow", f"{side}_yellow"),
+                                ("red", f"{side}_red"),
+                            )
+                        },
                     }
                 )
             )
@@ -134,24 +149,48 @@ class FormIndex:
             team: g.reset_index(drop=True) for team, g in long.groupby("team", sort=False)
         }
 
-    def last(self, team: str, before: pd.Timestamp, n: int = 5) -> list[dict]:
-        """The team's last ``n`` matches strictly before ``before`` (oldest first)."""
+    def last(
+        self, team: str, before: pd.Timestamp, n: int = 5, *, detailed: bool = False
+    ) -> list[dict]:
+        """The team's last ``n`` matches strictly before ``before`` (oldest first).
+
+        ``detailed`` adds match statistics (xG, shots, shots on target, corners, cards);
+        they are ``None`` where the source has none (extra leagues, cups, xG before 2026/27).
+        """
         games = self._by_team.get(team)
         if games is None:
             return []
         end = int(games["date"].searchsorted(pd.Timestamp(before), side="left"))
         out = []
         for g in games.iloc[max(0, end - n) : end].itertuples():
-            out.append(
-                {
-                    "date": g.date.strftime("%Y-%m-%d"),
-                    "result": "W" if g.gf > g.ga else "D" if g.gf == g.ga else "L",
-                    "goalsFor": int(g.gf),
-                    "goalsAgainst": int(g.ga),
-                    "home": bool(g.home),
-                    "opponent": self.display.get(g.opponent, g.opponent),
-                    "opponentLogo": self.ids.get(g.opponent),
-                    "competition": g.competition,
+            entry = {
+                "date": g.date.strftime("%Y-%m-%d"),
+                "result": "W" if g.gf > g.ga else "D" if g.gf == g.ga else "L",
+                "goalsFor": int(g.gf),
+                "goalsAgainst": int(g.ga),
+                "home": bool(g.home),
+                "opponent": self.display.get(g.opponent, g.opponent),
+                "opponentLogo": self.ids.get(g.opponent),
+                "competition": g.competition,
+            }
+            if detailed:
+                entry["stats"] = {
+                    "xgFor": _opt(g.xg_for, 2),
+                    "xgAgainst": _opt(g.xg_against, 2),
+                    "shotsFor": _opt(g.shots_for),
+                    "shotsAgainst": _opt(g.shots_against),
+                    "sotFor": _opt(g.sot_for),
+                    "sotAgainst": _opt(g.sot_against),
+                    "cornersFor": _opt(g.corners_for),
+                    "cornersAgainst": _opt(g.corners_against),
+                    "yellow": _opt(g.yellow),
+                    "red": _opt(g.red),
                 }
-            )
+            out.append(entry)
         return out
+
+
+def _opt(value: float, digits: int = 0) -> float | int | None:
+    if value is None or np.isnan(value):
+        return None
+    return round(float(value), digits) if digits else int(value)

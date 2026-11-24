@@ -69,6 +69,16 @@ const COMPETITION_PT: Record<string, string> = {
   CL: "Liga dos Campeões",
   EL: "Liga Europa",
   ECL: "Liga Conferência",
+  PTC: "Taça de Portugal",
+  FAC: "Taça de Inglaterra (FA Cup)",
+  EFLC: "Taça da Liga inglesa",
+  CDR: "Taça do Rei",
+  DFBP: "Taça da Alemanha",
+  CI: "Taça de Itália",
+  CDF: "Taça de França",
+  KNVB: "Taça dos Países Baixos",
+  SCC: "Taça da Escócia",
+  SLC: "Taça da Liga escocesa",
 };
 
 export function competitionName(code: string, name: string, lang: Lang): string {
@@ -101,6 +111,16 @@ const COMPETITION_EN: Record<string, string> = {
   CL: "Champions League",
   EL: "Europa League",
   ECL: "Conference League",
+  PTC: "Taça de Portugal",
+  FAC: "FA Cup",
+  EFLC: "EFL Cup",
+  CDR: "Copa del Rey",
+  DFBP: "DFB-Pokal",
+  CI: "Coppa Italia",
+  CDF: "Coupe de France",
+  KNVB: "KNVB Cup",
+  SCC: "Scottish Cup",
+  SLC: "Scottish League Cup",
 };
 
 /** Competition name from its code alone (for match lists that only carry the code). */
@@ -153,4 +173,8 @@ export function outcomeText(outcome: "H" | "D" | "A", home: string, away: string
   return tr(lang, `${team} win`, `${team} vence`);
 }
 
-export const LANG_BOOTSTRAP =`(function(){try{var l=localStorage.getItem("lang");if(l!=="en"&&l!=="pt"){l=(navigator.language||"").toLowerCase().indexOf("pt")===0?"pt":"en"}var d=document.documentElement;d.setAttribute("data-lang",l);d.setAttribute("lang",l==="pt"?"pt-PT":"en")}catch(e){}})();`;
+/**
+ * Runs in <head> before the first paint: picks the language (saved, else browser) and the
+ * colour theme (saved, else OS setting), so neither flashes on load.
+ */
+export const LANG_BOOTSTRAP = `(function(){var d=document.documentElement;try{var l=localStorage.getItem("lang");if(l!=="en"&&l!=="pt"){l=(navigator.language||"").toLowerCase().indexOf("pt")===0?"pt":"en"}d.setAttribute("data-lang",l);d.setAttribute("lang",l==="pt"?"pt-PT":"en");var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}d.setAttribute("data-theme",t)}catch(e){d.setAttribute("data-theme","light")}})();`;

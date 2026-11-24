@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { LanguageToggle } from "./language-toggle";
 import { NavLinks } from "./nav-links";
+import { ThemeToggle } from "./theme-toggle";
 
 export function SiteHeader() {
   return (
@@ -11,9 +12,10 @@ export function SiteHeader() {
           <PitchMark />
           <span>Match Predictor</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-3">
           <NavLinks />
           <LanguageToggle />
+          <ThemeToggle />
         </div>
       </div>
     </header>
