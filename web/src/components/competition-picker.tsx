@@ -69,7 +69,7 @@ export function CompetitionPicker({
         </svg>
       </button>
       {open && (
-        <ul role="listbox" className="absolute left-0 z-40 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-lg">
+        <ul role="listbox" className="pop-in absolute left-0 z-40 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-lg">
           <li>
             <button type="button" role="option" aria-selected={!value} onClick={() => pick("")} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-2 ${!value ? "font-medium" : ""}`}>
               <span className="inline-block h-4 w-4" />

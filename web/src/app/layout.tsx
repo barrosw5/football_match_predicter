@@ -30,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col bg-bg text-ink">
         <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 sm:px-6">{children}</main>
+        <main className="page-enter mx-auto w-full max-w-6xl flex-1 px-4 pb-16 sm:px-6">{children}</main>
         <SiteFooter generatedAt={meta.generatedAt} />
       </body>
     </html>

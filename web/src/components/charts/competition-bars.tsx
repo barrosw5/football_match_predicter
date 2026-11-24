@@ -29,7 +29,7 @@ export function CompetitionBars({ rows, overall }: { rows: WindowStats["byCompet
             </span>
             <span className="relative h-5">
               <span
-                className="absolute inset-y-1 left-0 rounded-r-[4px] bg-[var(--home)]"
+                className="grow-x absolute inset-y-1 left-0 rounded-r-[4px] bg-[var(--home)]"
                 style={{ width: `${Math.max(1, r.accuracy * 100)}%` }}
               />
               {overall !== undefined && (

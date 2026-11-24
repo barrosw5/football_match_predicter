@@ -64,15 +64,17 @@ export function DailyChart({ days }: { days: Day[] }) {
           const dim = hover !== null && hover !== i;
           return (
             <g key={d.date} opacity={dim ? 0.45 : 1}>
-              {d.correct > 0 && (
-                <path d={columnPath(x, yCorrect, barW, y(0) - yCorrect, missed === 0)} fill="var(--good)" />
-              )}
-              {missed > 0 && (
-                <path
-                  d={columnPath(x, yTotal, barW, Math.max(0, yCorrect - yTotal - (d.correct > 0 ? 2 : 0)), true)}
-                  fill="var(--bad)"
-                />
-              )}
+              <g className="grow-y" style={{ animationDelay: `${i * 12}ms` }}>
+                {d.correct > 0 && (
+                  <path d={columnPath(x, yCorrect, barW, y(0) - yCorrect, missed === 0)} fill="var(--good)" />
+                )}
+                {missed > 0 && (
+                  <path
+                    d={columnPath(x, yTotal, barW, Math.max(0, yCorrect - yTotal - (d.correct > 0 ? 2 : 0)), true)}
+                    fill="var(--bad)"
+                  />
+                )}
+              </g>
               {i % labelEvery === 0 && (
                 <text x={cx} y={HEIGHT - 8} textAnchor="middle" className="fill-[var(--ink-3)] text-[11px]">
                   {formatDate(noon(d.date), "dayMonth", lang)}

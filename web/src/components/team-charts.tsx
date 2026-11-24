@@ -44,8 +44,8 @@ export function EloChart({ points }: { points: [string, number][] }) {
           <tspan className="i18n-pt">{formatDate(`${d}T12:00:00Z`, "dayMonth", "pt")}</tspan>
         </text>
       ))}
-      <path d={path} fill="none" stroke="var(--home)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={x(last[0])} cy={y(last[1])} r="4.5" fill="var(--home)" stroke="var(--surface)" strokeWidth="2" />
+      <path d={path} pathLength={1} className="draw-line" fill="none" stroke="var(--home)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle className="fade-in [animation-delay:900ms]" cx={x(last[0])} cy={y(last[1])} r="4.5" fill="var(--home)" stroke="var(--surface)" strokeWidth="2" />
       <text x={x(last[0]) - 8} y={y(last[1]) - 10} textAnchor="end" className="tnum fill-[var(--ink)] text-[12px] font-semibold">
         {Math.round(last[1])}
       </text>
@@ -68,7 +68,7 @@ export function ValueChart({ history }: { history: { date: string; value: number
         {history.map((h, i) => (
           <div key={h.date} className="group relative flex h-full flex-1 items-end" title={`${h.date}: ${Math.round(h.value)} M€`}>
             <div
-              className="w-full rounded-t-[4px]"
+              className="grow-y w-full rounded-t-[4px]"
               style={{ height: `${(h.value / max) * 100}%`, background: i === history.length - 1 ? "var(--home)" : "var(--seq-2)" }}
             />
           </div>

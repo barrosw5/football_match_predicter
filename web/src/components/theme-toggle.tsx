@@ -15,6 +15,13 @@ const subscribe = (cb: () => void) => {
 };
 
 function setTheme(theme: Theme) {
+  // A short cross-fade between the two themes where the browser supports it.
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (document.startViewTransition && !reduce) document.startViewTransition(() => applyTheme(theme));
+  else applyTheme(theme);
+}
+
+function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   try {
     localStorage.setItem("theme", theme);

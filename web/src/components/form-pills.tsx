@@ -67,7 +67,7 @@ function FormTooltip({ game: g, latest }: { game: FormGame; latest: boolean }) {
   return (
     <span
       role="tooltip"
-      className="pointer-events-none absolute bottom-full right-0 z-30 mb-1.5 hidden w-max max-w-64 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-left text-xs font-normal shadow-md group-hover:block"
+      className="pop-in pointer-events-none absolute bottom-full right-0 z-30 mb-1.5 hidden w-max max-w-64 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-left text-xs font-normal shadow-md group-hover:block"
     >
       <span className="block text-ink-3">
         <T

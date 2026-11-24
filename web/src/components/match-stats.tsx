@@ -127,7 +127,7 @@ export function MatchStats({
                 <td className="py-1.5 font-medium">{h.value === null ? "–" : m.format(h.value)}</td>
                 <td className="py-1.5">
                   <span className="flex justify-end">
-                    <span className="h-2 rounded-l-[4px]" style={{ width: `${((h.value ?? 0) / max) * 100}%`, background: HOME }} />
+                    <span className="grow-x-end h-2 rounded-l-[4px]" style={{ width: `${((h.value ?? 0) / max) * 100}%`, background: HOME }} />
                   </span>
                 </td>
                 <td className="px-2 py-1.5 text-center text-xs text-ink-2">
@@ -135,7 +135,7 @@ export function MatchStats({
                 </td>
                 <td className="py-1.5">
                   <span className="flex">
-                    <span className="h-2 rounded-r-[4px]" style={{ width: `${((a.value ?? 0) / max) * 100}%`, background: AWAY }} />
+                    <span className="grow-x h-2 rounded-r-[4px]" style={{ width: `${((a.value ?? 0) / max) * 100}%`, background: AWAY }} />
                   </span>
                 </td>
                 <td className="py-1.5 text-right font-medium">{a.value === null ? "–" : m.format(a.value)}</td>

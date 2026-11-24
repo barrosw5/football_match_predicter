@@ -159,7 +159,7 @@ function Bar({ color, value, label }: { color: string; value: number; label: Rea
       <div className="flex items-center gap-2">
         <span className="w-24 shrink-0 text-xs text-ink-2">{label}</span>
         <span className="relative h-3 flex-1">
-          <span className="absolute inset-y-0 left-0 rounded-r-[4px]" style={{ width: `${value * 100}%`, background: color }} />
+          <span className="grow-x absolute inset-y-0 left-0 rounded-r-[4px]" style={{ width: `${value * 100}%`, background: color }} />
         </span>
       </div>
       <span className="text-right font-medium">{pct(value, 1)}</span>

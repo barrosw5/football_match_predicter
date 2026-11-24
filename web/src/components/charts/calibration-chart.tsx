@@ -60,7 +60,7 @@ export function CalibrationChart({ bins }: { bins: Bin[] }) {
         <text x={x(0.96)} y={y(0.96) + 16} textAnchor="end" className="fill-[var(--ink-3)] text-[11px]">
           {tr(lang, "perfect", "perfeito")}
         </text>
-        <path d={line} fill="none" stroke="var(--home)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={line} pathLength={1} className="draw-line" fill="none" stroke="var(--home)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {bins.map((b, i) => (
           <g key={b.bin}>
             <circle

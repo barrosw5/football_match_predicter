@@ -34,7 +34,7 @@ export function ProbabilityBar({
   const title = `${pct(probs.home)} / ${pct(probs.draw)} / ${pct(probs.away)}`;
   return (
     <div className="w-full">
-      <div className={`flex ${height} w-full gap-0.5`} role="img" aria-label={title} title={title}>
+      <div className={`reveal-x flex ${height} w-full gap-0.5`} role="img" aria-label={title} title={title}>
         {SEGMENTS.map((s, i) => (
           <div
             key={s.key}

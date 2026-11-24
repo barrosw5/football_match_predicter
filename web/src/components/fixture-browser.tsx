@@ -157,7 +157,7 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
               </button>
               {expanded && (
                 // no overflow-hidden: the form tooltips must be able to overlap the row above
-                <ul className="mt-1 divide-y divide-line rounded-xl border border-line bg-surface">
+                <ul className="expand-in mt-1 divide-y divide-line rounded-xl border border-line bg-surface">
                   {list.map((f) => (
                     <FixtureRow key={f.id} fixture={f} />
                   ))}

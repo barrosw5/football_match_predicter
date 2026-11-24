@@ -129,3 +129,109 @@ html:not([data-lang="pt"]) .i18n-pt {
 :root:not([data-theme="dark"]) .logo-dark {
   display: none;
 }
+
+/* Motion. One curve, short durations, and only where it explains something: a page
+   arriving, a probability or a count filling up, a menu opening from its button.
+   Everything is skipped when the visitor asks for reduced motion. Fill mode is
+   "backwards" so nothing keeps a transform (and a stacking context) once finished. */
+:root {
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The first blocks of a page rise in, a few tens of ms apart. */
+  .page-enter > * {
+    animation: rise 420ms var(--ease) backwards;
+  }
+  .page-enter > :nth-child(2) { animation-delay: 50ms; }
+  .page-enter > :nth-child(3) { animation-delay: 100ms; }
+  .page-enter > :nth-child(4) { animation-delay: 150ms; }
+  .page-enter > :nth-child(5) { animation-delay: 200ms; }
+  .page-enter > :nth-child(n + 6) { animation-delay: 250ms; }
+
+  /* Probability bars fill from the left, like a share being poured in. */
+  .reveal-x {
+    animation: reveal-x 700ms var(--ease) backwards;
+  }
+  /* Bars grow from their baseline: grow-x from the left, grow-x-end from the right. */
+  .grow-x,
+  .grow-x-end,
+  .grow-y {
+    animation: grow-x 600ms var(--ease) backwards;
+    transform-origin: left center;
+  }
+  .grow-x-end {
+    transform-origin: right center;
+  }
+  .grow-y {
+    animation-name: grow-y;
+    transform-origin: center bottom;
+    transform-box: fill-box;
+  }
+  /* Lines draw themselves (the path needs pathLength="1"). */
+  .draw-line {
+    stroke-dasharray: 1;
+    animation: draw 1100ms var(--ease) backwards;
+  }
+  .fade-in {
+    animation: fade 400ms var(--ease) backwards;
+  }
+  /* Menus and tooltips fade and rise a few pixels from where they open. */
+  .pop-in {
+    animation: pop 180ms var(--ease) backwards;
+  }
+  /* A fixture day that is opened. */
+  .expand-in {
+    animation: pop 240ms var(--ease) backwards;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+    animation-timing-function: var(--ease);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes reveal-x {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
