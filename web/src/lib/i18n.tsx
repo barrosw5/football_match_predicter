@@ -144,6 +144,7 @@ const formatters = {
   day: { weekday: "long", day: "numeric", month: "long", timeZone: TZ },
   short: { weekday: "short", day: "numeric", month: "short", timeZone: TZ },
   dayMonth: { day: "numeric", month: "short", timeZone: TZ },
+  full: { day: "numeric", month: "long", year: "numeric", timeZone: TZ },
   stamp: { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ, timeZoneName: "short" },
 } satisfies Record<string, Intl.DateTimeFormatOptions>;
 

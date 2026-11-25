@@ -288,6 +288,7 @@ def performance_payload(sc: pd.DataFrame, now: pd.Timestamp) -> dict:
         df = sc if days is None else sc[sc["kickoff"] >= now - pd.Timedelta(days=days)]
         windows[key] = {
             **_stats(df),
+            "since": df["kickoff"].min().strftime("%Y-%m-%d") if len(df) else None,
             "byCompetition": _by_competition(df) if len(df) else [],
             "calibration": _calibration(df),
         }
@@ -305,7 +306,13 @@ def performance_payload(sc: pd.DataFrame, now: pd.Timestamp) -> dict:
                     "brier": _num(g["brier"].mean()),
                 }
             )
-    return {"windows": windows, "daily": daily}
+    # Whole track record by calendar month, for the "all time" chart.
+    monthly = []
+    if not sc.empty:
+        months = sc["kickoff"].dt.strftime("%Y-%m-01")
+        for month, g in sc.groupby(months):
+            monthly.append({"date": month, "n": int(len(g)), "correct": int(g["correct"].sum())})
+    return {"windows": windows, "daily": daily, "monthly": monthly}
 
 
 def ranking_payload(

@@ -15,8 +15,15 @@ const M = { top: 12, right: 8, bottom: 26, left: 32 };
 
 const noon = (date: string) => `${date}T12:00:00Z`;
 
-/** Stacked columns per day: correct picks (bottom) and missed picks, 2px surface gap between. */
-export function DailyChart({ days }: { days: Day[] }) {
+const monthLabel = (date: string, lang: "en" | "pt", long = false) =>
+  new Date(noon(date)).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", {
+    month: long ? "long" : "short",
+    year: long ? "numeric" : "2-digit",
+    timeZone: "UTC",
+  });
+
+/** Stacked columns per day (or per month): correct picks (bottom) and missed picks, 2px surface gap between. */
+export function DailyChart({ days, unit = "day" }: { days: Day[]; unit?: "day" | "month" }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const lang = useLang();
@@ -45,7 +52,11 @@ export function DailyChart({ days }: { days: Day[] }) {
         width={width}
         height={HEIGHT}
         role="img"
-        aria-label={tr(lang, "Correct and missed predictions per day", "Previsões certas e erradas por dia")}
+        aria-label={
+          unit === "month"
+            ? tr(lang, "Correct and missed predictions per month", "Previsões certas e erradas por mês")
+            : tr(lang, "Correct and missed predictions per day", "Previsões certas e erradas por dia")
+        }
       >
         {ticks.map((t) => (
           <g key={t}>
@@ -77,7 +88,7 @@ export function DailyChart({ days }: { days: Day[] }) {
               </g>
               {i % labelEvery === 0 && (
                 <text x={cx} y={HEIGHT - 8} textAnchor="middle" className="fill-[var(--ink-3)] text-[11px]">
-                  {formatDate(noon(d.date), "dayMonth", lang)}
+                  {unit === "month" ? monthLabel(d.date, lang) : formatDate(noon(d.date), "dayMonth", lang)}
                 </text>
               )}
               <rect
@@ -87,7 +98,7 @@ export function DailyChart({ days }: { days: Day[] }) {
                 height={innerH}
                 fill="transparent"
                 tabIndex={0}
-                aria-label={`${formatDate(noon(d.date), "short", lang)}: ${d.correct} / ${d.n}`}
+                aria-label={`${unit === "month" ? monthLabel(d.date, lang, true) : formatDate(noon(d.date), "short", lang)}: ${d.correct} / ${d.n}`}
                 onPointerEnter={() => setHover(i)}
                 onPointerLeave={() => setHover(null)}
                 onFocus={() => setHover(i)}
@@ -102,7 +113,9 @@ export function DailyChart({ days }: { days: Day[] }) {
           className="pointer-events-none absolute top-0 z-10 w-max rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-sm"
           style={{ left: Math.min(Math.max(0, M.left + band * hover + band / 2 - 70), width - 150) }}
         >
-          <div className="text-ink-2">{formatDate(noon(active.date), "short", lang)}</div>
+          <div className="text-ink-2">
+            {unit === "month" ? monthLabel(active.date, lang, true) : formatDate(noon(active.date), "short", lang)}
+          </div>
           <div className="tnum mt-1 flex items-center gap-2">
             <span className="inline-block h-0.5 w-3 bg-[var(--good)]" />
             <strong className="font-semibold">{active.correct}</strong>{" "}
@@ -131,6 +144,6 @@ function columnPath(x: number, top: number, w: number, h: number, roundTop: bool
 
 function niceMax(v: number): number {
   if (v <= 10) return 10;
-  const step = v <= 50 ? 10 : v <= 200 ? 50 : 100;
+  const step = v <= 50 ? 10 : v <= 200 ? 50 : v <= 1000 ? 100 : 500;
   return Math.ceil(v / step) * step;
 }

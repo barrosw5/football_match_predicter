@@ -123,8 +123,9 @@ What this means:
 - "Value bets" (model probability × odds > 1.10) have historically **lost money**: when the model disagrees strongly
   with the market, the market is usually right. The site reports this openly instead of hiding it.
 
-The live numbers for the last 7/30/90 days are on the site's
-[Track record](https://barrosw5.github.io/football_match_predicter/performance/) page.
+The site's [Track record](https://barrosw5.github.io/football_match_predicter/performance/) page shows the last
+7/30/90 days and the whole record: a week-by-week walk-forward backtest since 2023/24 (each week predicted by a model
+trained only on earlier matches) followed by the live forecasts, each labelled as such.
 
 <p align="center">
   <img src="docs/screenshots/track-record.png" alt="Track record page" width="49%" />
@@ -175,7 +176,7 @@ python -m venv .venv
 source .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -e ".[dev,notebooks]"
 
-football-predictor run --backtest-days 90   # first run: downloads ~12 seasons (a few minutes)
+football-predictor run --backtest-days 1250 # first run: downloads ~12 seasons, backtests since 2023/24 (~30 min)
 football-predictor run                      # daily run: update, retrain, settle, forecast, export
 pytest                                      # tests
 ```
@@ -203,7 +204,7 @@ publishes before the first kick-off, and the other two refresh the odds before t
 4. builds the Next.js site and deploys it to GitHub Pages.
 
 One-time setup: **Settings > Pages > Build and deployment > Source: GitHub Actions**. To seed the track record on a
-fresh repository, run the workflow manually with `backtest_days = 90`.
+fresh repository, run the workflow manually with `backtest_days = 1250` (since 2023/24, about an hour).
 
 The site is plain static files, so there is no server that can sleep and no uptime pinger is needed. It can also be
 hosted on Vercel, Netlify or as a Render *Static Site* (root directory `web`, build command `npm run build`, publish

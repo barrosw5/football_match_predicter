@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       backtest_days:
-        description: "Seed the track record with a walk-forward backtest of N days (0 = off)"
+        description: "Seed the track record with a walk-forward backtest of N days (0 = off; ~1250 = since 2023/24, about an hour)"
         default: "0"
         required: false
 
@@ -39,7 +39,8 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Daily runs take minutes; a multi-season backtest (one refit per simulated week) needs about an hour.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
 

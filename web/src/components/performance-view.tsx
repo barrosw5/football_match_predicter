@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { int, num, pct, signed } from "@/lib/format";
-import { T } from "@/lib/i18n";
+import { LocalDate, T } from "@/lib/i18n";
 import type { Outcome, Performance, WindowKey } from "@/lib/types";
 
 import { CalibrationChart } from "./charts/calibration-chart";
@@ -36,22 +36,23 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
     return perf.daily.filter((d) => cutoff === null || Date.parse(`${d.date}T23:59:59Z`) >= cutoff);
   }, [perf, win]);
 
+  const allTime = win.days === null && (perf.monthly?.length ?? 0) > 1;
   const live = s.sources?.live ?? 0;
   const backtest = s.sources?.backtest ?? 0;
-  const card = "rounded-2xl border border-line bg-surface p-5";
+  const card = "rounded-2xl border border-line bg-surface p-4 sm:p-5";
 
   return (
     <div>
       <div className="-mx-4 mb-6 border-b border-line px-4 py-3 sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" className="flex rounded-lg border border-line bg-surface p-0.5">
+          <div role="group" className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:w-auto">
             {WINDOWS.map((w) => (
               <button
                 key={w.key}
                 type="button"
                 aria-pressed={w.key === windowKey}
                 onClick={() => setWindowKey(w.key)}
-                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors sm:flex-none ${
                   w.key === windowKey ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink"
                 }`}
               >
@@ -68,6 +69,15 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
             </span>
           )}
         </div>
+        {backtest > 0 && s.since && (
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-ink-3">
+            <T en="From" pt="Desde" /> <LocalDate iso={`${s.since}T12:00:00Z`} kind="full" />.{" "}
+            <T
+              en="Backtest: each week was predicted by a model trained only on the matches before it, as if it had been running then. Live: forecasts saved before kick-off."
+              pt="Simulação: cada semana foi prevista por um modelo treinado só com os jogos anteriores, como se já estivesse a funcionar nessa altura. Em direto: previsões guardadas antes do apito inicial."
+            />
+          </p>
+        )}
       </div>
 
       {s.n === 0 ? (
@@ -113,7 +123,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
             <section className={card}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-semibold">
-                  <T en="Day by day" pt="Dia a dia" />
+                  {allTime ? <T en="Month by month" pt="Mês a mês" /> : <T en="Day by day" pt="Dia a dia" />}
                 </h2>
                 <ul className="flex gap-4 text-xs text-ink-2">
                   <li className="flex items-center gap-1.5">
@@ -127,18 +137,13 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                 </ul>
               </div>
               <div className="mt-4">
-                <DailyChart days={daily} />
+                {allTime ? <DailyChart days={perf.monthly!} unit="month" /> : <DailyChart days={daily} />}
               </div>
-              {win.days === null && (
-                <p className="mt-2 text-xs text-ink-3">
-                  <T en="Showing the last 90 days." pt="Últimos 90 dias." />
-                </p>
-              )}
             </section>
           </div>
 
           <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-            <div className="grid content-start gap-4">
+            <div className="grid min-w-0 grid-cols-1 content-start gap-4">
             {s.market && <ModelVsMarket m={s.market} />}
               <section className={card}>
                 <h2 className="font-semibold">
@@ -180,7 +185,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                 </p>
               </section>
             </div>
-            <div className="grid content-start gap-4">
+            <div className="grid min-w-0 grid-cols-1 content-start gap-4">
               <section className={card}>
                 <h2 className="font-semibold">
                   <T en="What it picked" pt="O que escolheu" />
@@ -191,7 +196,8 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                     pt="A previsão é o resultado mais provável, por isso o empate quase nunca é escolhido, apesar de acontecer em cerca de um quarto dos jogos."
                   />
                 </p>
-                <table className="tnum mt-4 w-full text-sm">
+                <div className="scroll-x -mx-4 mt-4 px-4 sm:mx-0 sm:px-0">
+                <table className="tnum w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs text-ink-3">
                       <th className="pb-2 font-normal">
@@ -224,6 +230,7 @@ export function PerformanceView({ perf, valueEdge }: { perf: Performance; valueE
                     })}
                   </tbody>
                 </table>
+                </div>
               </section>
               <section className={card}>
                 <h2 className="font-semibold">

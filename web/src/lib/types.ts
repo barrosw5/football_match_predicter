@@ -126,6 +126,8 @@ export interface WindowStats {
   value?: { bets: number; won: number; profit: number; roi: number | null };
   byOutcome?: Record<Outcome, { predicted: number; correct: number; actual: number }>;
   sources?: Partial<Record<"live" | "backtest", number>>;
+  /** First kick-off in the window (YYYY-MM-DD). */
+  since?: string | null;
   byCompetition: (Competition & { n: number; correct: number; accuracy: number; brier: number })[];
   calibration: { bin: number; predicted: number; observed: number; n: number }[];
 }
@@ -136,6 +138,8 @@ export interface Performance {
   generatedAt: string;
   windows: Record<WindowKey, WindowStats>;
   daily: { date: string; n: number; correct: number; brier: number }[];
+  /** The whole track record by month (date = first of the month). */
+  monthly?: { date: string; n: number; correct: number }[];
 }
 
 export interface Meta {
