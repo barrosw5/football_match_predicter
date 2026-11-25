@@ -24,10 +24,12 @@ export function CompetitionPicker({
   competitions,
   value,
   onChange,
+  className = "",
 }: {
   competitions: PickerCompetition[];
   value: string;
   onChange: (code: string) => void;
+  className?: string;
 }) {
   const lang = useLang();
   const [open, setOpen] = useState(false);
@@ -54,13 +56,13 @@ export function CompetitionPicker({
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex min-w-52 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-left text-sm"
+        className="flex w-full min-w-0 items-center gap-2 rounded-lg sm:min-w-52 border border-line bg-surface px-3 py-2 text-left text-sm"
       >
         {selected ? <CompetitionLogo src={selected.logo} /> : null}
         <span className="flex-1 truncate">{selected ? label(selected) : tr(lang, "Every competition", "Todas as competições")}</span>
@@ -69,9 +71,9 @@ export function CompetitionPicker({
         </svg>
       </button>
       {open && (
-        <ul role="listbox" className="pop-in absolute left-0 z-40 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-lg">
+        <ul role="listbox" className="pop-in absolute left-0 z-40 mt-1 max-h-80 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-line bg-surface p-1 shadow-lg">
           <li>
-            <button type="button" role="option" aria-selected={!value} onClick={() => pick("")} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-2 ${!value ? "font-medium" : ""}`}>
+            <button type="button" role="option" aria-selected={!value} onClick={() => pick("")} className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-surface-2 sm:py-1.5 ${!value ? "font-medium" : ""}`}>
               <span className="inline-block h-4 w-4" />
               {tr(lang, "Every competition", "Todas as competições")}
             </button>
@@ -83,7 +85,7 @@ export function CompetitionPicker({
                 role="option"
                 aria-selected={c.code === value}
                 onClick={() => pick(c.code)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-2 ${c.code === value ? "font-medium" : ""}`}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-surface-2 sm:py-1.5 ${c.code === value ? "font-medium" : ""}`}
               >
                 <CompetitionLogo src={c.logo} />
                 <span className="truncate">{label(c)}</span>

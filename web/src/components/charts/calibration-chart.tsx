@@ -10,7 +10,7 @@ import { useWidth } from "./use-width";
 
 type Bin = { bin: number; predicted: number; observed: number; n: number };
 
-const M = { top: 12, right: 12, bottom: 34, left: 40 };
+const M = { top: 12, right: 20, bottom: 34, left: 40 };
 
 /**
  * Reliability diagram: when the model says "40%", does it happen ~40% of the time?
@@ -57,7 +57,7 @@ export function CalibrationChart({ bins }: { bins: Bin[] }) {
           </g>
         ))}
         <line x1={x(0)} y1={y(0)} x2={x(1)} y2={y(1)} stroke="var(--ink-3)" strokeWidth={1} />
-        <text x={x(0.96)} y={y(0.96) + 16} textAnchor="end" className="fill-[var(--ink-3)] text-[11px]">
+        <text x={x(0.72) + 6} y={y(0.72) + 14} textAnchor="start" className="fill-[var(--ink-3)] text-[11px]">
           {tr(lang, "perfect", "perfeito")}
         </text>
         <path d={line} pathLength={1} className="draw-line" fill="none" stroke="var(--home)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />

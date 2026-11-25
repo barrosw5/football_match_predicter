@@ -58,7 +58,7 @@ export function PlayerView() {
   const assists = Object.entries(p.season.assists);
   const apps = p.appearances;
   const starts = apps.filter((a) => a.started).length;
-  const card = "rounded-2xl border border-line bg-surface p-5 sm:p-6";
+  const card = "rounded-2xl border border-line bg-surface p-4 sm:p-6";
   const facts: [string, string | number | null][] = [
     [tr(lang, "Market value", "Valor de mercado"), p.value != null ? `${p.value} M€` : null],
     [tr(lang, "Position", "Posição"), p.posName ?? p.pos],
@@ -141,17 +141,17 @@ export function PlayerView() {
               {tr(lang, "No line-ups recorded for this player yet.", "Ainda não há escalações registadas deste jogador.")}
             </p>
           ) : (
-            <div className="mt-3 overflow-x-auto">
-              <table className="tnum w-full min-w-[32rem] text-sm">
+            <div className="scroll-x mt-3">
+              <table className="tnum w-full text-sm sm:min-w-[32rem]">
                 <thead>
                   <tr className="text-left text-xs text-ink-3">
                     <th className="pb-2 font-normal">{tr(lang, "Date", "Data")}</th>
                     <th className="pb-2 font-normal">{tr(lang, "Opponent", "Adversário")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "Score", "Resultado")}</th>
-                    <th className="pb-2 text-center font-normal">{tr(lang, "Role", "Papel")}</th>
+                    <th className="hidden pb-2 text-center font-normal sm:table-cell">{tr(lang, "Role", "Papel")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "G", "G")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "A", "A")}</th>
-                    <th className="pb-2 text-center font-normal">{tr(lang, "Shots", "Remates")}</th>
+                    <th className="hidden pb-2 text-center font-normal sm:table-cell">{tr(lang, "Shots", "Remates")}</th>
                     <th className="pb-2 text-center font-normal">{tr(lang, "Cards", "Cartões")}</th>
                   </tr>
                 </thead>
@@ -162,7 +162,7 @@ export function PlayerView() {
                         {formatDate(`${a.date}T12:00:00Z`, "dayMonth", lang)}
                         <span className="block text-[10px] text-ink-3">{competitionLabel(a.competition, lang)}</span>
                       </td>
-                      <td className="max-w-48 py-1.5 pr-2">
+                      <td className="max-w-[8.5rem] py-1.5 pr-2 sm:max-w-48">
                         <span className="flex min-w-0 items-center gap-1.5">
                           <span className="text-xs text-ink-3">{a.home ? "vs" : tr(lang, "at", "em")}</span>
                           <TeamLogo id={a.opponentLogo} name={a.opponent} size={16} />
@@ -174,14 +174,15 @@ export function PlayerView() {
                             <span className="truncate">{a.opponent}</span>
                           )}
                         </span>
+                        {!a.started && <span className="block text-[10px] text-ink-3 sm:hidden">{tr(lang, "sub", "suplente")}</span>}
                       </td>
-                      <td className="py-1.5 text-center font-medium">
+                      <td className="whitespace-nowrap py-1.5 text-center font-medium">
                         {a.goalsFor ?? "–"}–{a.goalsAgainst ?? "–"}
                       </td>
-                      <td className="py-1.5 text-center text-xs text-ink-2">{a.started ? tr(lang, "start", "titular") : tr(lang, "sub", "suplente")}</td>
+                      <td className="hidden py-1.5 text-center text-xs text-ink-2 sm:table-cell">{a.started ? tr(lang, "start", "titular") : tr(lang, "sub", "suplente")}</td>
                       <td className="py-1.5 text-center">{a.goals || ""}</td>
                       <td className="py-1.5 text-center">{a.assists || ""}</td>
-                      <td className="py-1.5 text-center text-ink-2">{a.shots == null ? "" : `${a.shots} (${a.sot ?? 0})`}</td>
+                      <td className="hidden py-1.5 text-center text-ink-2 sm:table-cell">{a.shots == null ? "" : `${a.shots} (${a.sot ?? 0})`}</td>
                       <td className="py-1.5 text-center">
                         <span className="inline-flex gap-1">
                           {a.yellow && <span className="h-3 w-2 rounded-[1px] bg-[#eda100]" aria-label="yellow" />}

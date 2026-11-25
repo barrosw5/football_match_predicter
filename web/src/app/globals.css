@@ -98,9 +98,34 @@ html {
   color: var(--ink);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "ss01";
+  /* Safety net: nothing may drag the page sideways on a phone. "clip" (unlike "hidden")
+     makes no scroll container, so sticky headers keep working. */
+  overflow-x: clip;
+}
+
+/* iOS zooms into any field under 16px when it is focused: keep phones at 16px. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Scroll areas for wide tables: momentum scrolling and no accidental page swipe. */
+.scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Numbers line up in tables, tiles and charts. */

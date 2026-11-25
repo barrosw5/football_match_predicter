@@ -48,7 +48,7 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
             setComp("");
             setPage(0);
           }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm sm:flex-none"
         >
           <option value="">{tr(lang, "All seasons", "Todas as épocas")}</option>
           {seasons.map((s) => (
@@ -64,7 +64,7 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
             setComp(e.target.value);
             setPage(0);
           }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm sm:flex-none"
         >
           <option value="">{tr(lang, "Every competition", "Todas as competições")}</option>
           {comps.map((c) => (
@@ -73,19 +73,19 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
             </option>
           ))}
         </select>
-        <span className="tnum ml-auto text-sm text-ink-2">
+        <span className="tnum ml-auto w-full text-right text-sm text-ink-2 sm:w-auto">
           {filtered.length} {tr(lang, "matches", "jogos")} · {totals.w}
           {tr(lang, "W", "V")} {totals.d}
           {tr(lang, "D", "E")} {totals.l}
           {tr(lang, "L", "D")} · {totals.gf}–{totals.ga}
         </span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-line">
-        <table className="tnum w-full min-w-[36rem] text-sm">
+      <div className="scroll-x rounded-xl border border-line">
+        <table className="tnum w-full text-sm sm:min-w-[36rem]">
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-3">
               <th className="px-3 py-2 font-normal">{tr(lang, "Date", "Data")}</th>
-              <th className="px-2 py-2 font-normal">{tr(lang, "Competition", "Competição")}</th>
+              <th className="hidden px-2 py-2 font-normal sm:table-cell">{tr(lang, "Competition", "Competição")}</th>
               <th className="px-2 py-2 font-normal">{tr(lang, "Opponent", "Adversário")}</th>
               <th className="px-2 py-2 text-center font-normal">{tr(lang, "Score", "Resultado")}</th>
               <th className="px-3 py-2 text-right font-normal" />
@@ -97,11 +97,12 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
               const res = gf > ga ? "W" : gf === ga ? "D" : "L";
               return (
                 <tr key={`${date}-${i}`} className="hover:bg-surface-2">
-                  <td className="px-3 py-1.5 text-ink-2">
-                    {formatDate(`${date}T12:00:00Z`, "dayMonth", lang)} {date.slice(0, 4)}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-ink-2">
+                    {formatDate(`${date}T12:00:00Z`, "dayMonth", lang)}
+                    <span className="max-sm:block max-sm:text-[11px] max-sm:text-ink-3"> {date.slice(0, 4)}</span>
                   </td>
-                  <td className="max-w-40 truncate px-2 py-1.5 text-xs text-ink-2">{competitionLabel(competition, lang)}</td>
-                  <td className="max-w-56 px-2 py-1.5">
+                  <td className="hidden max-w-40 truncate px-2 py-1.5 text-xs text-ink-2 sm:table-cell">{competitionLabel(competition, lang)}</td>
+                  <td className="max-w-[9rem] px-2 py-1.5 sm:max-w-56">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className="w-5 shrink-0 text-xs text-ink-3">{home ? "vs" : tr(lang, "at", "em")}</span>
                       <TeamLogo id={oppLogo} name={opponent} size={16} />
@@ -113,8 +114,9 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
                         <span className="truncate">{opponent}</span>
                       )}
                     </span>
+                    <span className="block truncate text-[11px] text-ink-3 sm:hidden">{competitionLabel(competition, lang)}</span>
                   </td>
-                  <td className="px-2 py-1.5 text-center">
+                  <td className="whitespace-nowrap px-2 py-1.5 text-center">
                     <span className="font-semibold">
                       {gf}–{ga}
                     </span>{" "}
@@ -122,10 +124,13 @@ export function TeamHistory({ rows }: { rows: HistoryRow[] }) {
                       {lang === "pt" ? { W: "V", D: "E", L: "D" }[res] : res}
                     </span>
                   </td>
-                  <td className="px-3 py-1.5 text-right text-xs">
+                  <td className="px-2 py-1.5 text-right text-xs sm:px-3">
                     {matchId && (
-                      <Link href={`/match/${matchId}/`} className="text-accent hover:underline">
-                        <T en="forecast" pt="previsão" />
+                      <Link href={`/match/${matchId}/`} className="text-accent hover:underline" aria-label={tr(lang, "Forecast", "Previsão")}>
+                        <span className="hidden sm:inline">
+                          <T en="forecast" pt="previsão" />
+                        </span>
+                        <span className="text-base sm:hidden" aria-hidden="true">›</span>
                       </Link>
                     )}
                   </td>

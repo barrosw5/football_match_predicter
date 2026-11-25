@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -18,6 +18,16 @@ export const metadata: Metadata = {
   },
   description:
     "Machine-learning forecasts for 21 European leagues and the UEFA club competitions, updated automatically every day, with a public track record of every prediction.",
+};
+
+// Browser chrome on phones matches the header in either theme.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfb" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a19" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

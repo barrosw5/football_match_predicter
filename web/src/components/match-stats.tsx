@@ -70,7 +70,7 @@ export function MatchStats({
   return (
     <div>
       {/* Expected for this match */}
-      <dl className="tnum grid grid-cols-3 gap-3 text-sm">
+      <dl className="tnum grid grid-cols-3 gap-2 text-sm sm:gap-3">
         <Expected label={<T en="Expected goals" pt="Golos esperados" />} value={`${num(expected.xgHome, 2)} – ${num(expected.xgAway, 2)}`} />
         <Expected label={<T en="Both teams score" pt="Ambas marcam" />} value={pct(expected.btts)} />
         <Expected label={<T en="Over 2.5 goals" pt="Mais de 2,5 golos" />} value={pct(expected.over25)} />
@@ -92,24 +92,22 @@ export function MatchStats({
 
       <table className="tnum mt-3 w-full table-fixed text-sm">
         <colgroup>
-          <col className="w-[4.5rem]" />
+          <col className="w-12 sm:w-[4.5rem]" />
           <col />
-          <col className="w-[9.5rem] sm:w-[11rem]" />
+          <col className="w-[7.5rem] sm:w-[11rem]" />
           <col />
-          <col className="w-[4.5rem]" />
+          <col className="w-12 sm:w-[4.5rem]" />
         </colgroup>
         <thead>
           <tr className="text-xs text-ink-3">
-            <th className="pb-2 text-left font-normal">
+            <th colSpan={2} className="pb-2 text-left font-normal">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2 w-2 shrink-0 rounded-[2px]" style={{ background: HOME }} aria-hidden="true" />
                 <span className="truncate">{home.name}</span>
               </span>
             </th>
             <th />
-            <th />
-            <th />
-            <th className="pb-2 text-right font-normal">
+            <th colSpan={2} className="pb-2 text-right font-normal">
               <span className="flex items-center justify-end gap-1.5">
                 <span className="truncate">{away.name}</span>
                 <span className="inline-block h-2 w-2 shrink-0 rounded-[2px]" style={{ background: AWAY }} aria-hidden="true" />
@@ -130,7 +128,7 @@ export function MatchStats({
                     <span className="grow-x-end h-2 rounded-l-[4px]" style={{ width: `${((h.value ?? 0) / max) * 100}%`, background: HOME }} />
                   </span>
                 </td>
-                <td className="px-2 py-1.5 text-center text-xs text-ink-2">
+                <td className="px-1.5 py-1.5 text-center text-xs leading-4 text-ink-2 sm:px-2">
                   <T en={m.en} pt={m.pt} />
                 </td>
                 <td className="py-1.5">
@@ -172,9 +170,9 @@ export function MatchStats({
 
 function Expected({ label, value }: { label: React.ReactNode; value: string }) {
   return (
-    <div className="rounded-lg bg-surface-2 px-3 py-2">
+    <div className="min-w-0 rounded-lg bg-surface-2 px-2.5 py-2 sm:px-3">
       <dt className="text-xs text-ink-2">{label}</dt>
-      <dd className="mt-0.5 font-semibold">{value}</dd>
+      <dd className="mt-0.5 whitespace-nowrap font-semibold">{value}</dd>
     </div>
   );
 }
@@ -217,8 +215,8 @@ function History({ games, lang, showDetail }: { games: FormGame[]; lang: "en" | 
       </p>
     );
   return (
-    <div className="mt-3 overflow-x-auto">
-      <table className="tnum w-full min-w-[38rem] text-sm">
+    <div className="scroll-x mt-3">
+      <table className={`tnum w-full text-sm ${showDetail ? "min-w-[38rem]" : "min-w-[22rem]"}`}>
         <thead>
           <tr className="text-left text-xs text-ink-3">
             <th className="pb-2 font-normal">{tr(lang, "Date", "Data")}</th>

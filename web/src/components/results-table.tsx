@@ -80,7 +80,7 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
   return (
     <div className={results ? "" : "opacity-60"}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div role="group" className="flex rounded-lg border border-line bg-surface p-0.5">
+        <div role="group" className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:w-auto">
           {FILTERS.map((f) => (
             <button
               key={f.id}
@@ -90,13 +90,14 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
                 setFilter(f.id);
                 setPage(0);
               }}
-              className={`rounded-md px-3 py-1.5 text-sm ${filter === f.id ? "bg-surface-2 font-medium" : "text-ink-2 hover:text-ink"}`}
+              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-sm sm:flex-none sm:px-3 ${filter === f.id ? "bg-surface-2 font-medium" : "text-ink-2 hover:text-ink"}`}
             >
               <T en={f.en} pt={f.pt} />
             </button>
           ))}
         </div>
         <CompetitionPicker
+          className="min-w-0 flex-1 sm:flex-none"
           competitions={competitions}
           value={competition}
           onChange={(c) => {
@@ -109,8 +110,78 @@ export function ResultsTable({ days, generatedAt }: { days: number | null; gener
         </span>
       </div>
 
+      {/* Phones: one card per match instead of an eight-column table. */}
+      <ul className="divide-y divide-line rounded-xl border border-line bg-surface sm:hidden">
+        {!results && (
+          <li className="px-4 py-3 text-sm text-ink-3">
+            <T en="Loading…" pt="A carregar…" />
+          </li>
+        )}
+        {shown.map((r) => {
+          const pickProb = r.pick === "H" ? r.probs.home : r.pick === "D" ? r.probs.draw : r.probs.away;
+          return (
+            <li key={r.id}>
+              <Link href={`/match/${r.id}/`} className="block px-4 py-3 active:bg-surface-2">
+                <span className="flex items-center justify-between gap-3 text-xs text-ink-3">
+                  <span className="min-w-0 truncate">
+                    <LocalDate iso={r.kickoff} kind="dayMonth" /> ·{" "}
+                    <T
+                      en={competitionName(r.competition.code, r.competition.name, "en")}
+                      pt={competitionName(r.competition.code, r.competition.name, "pt")}
+                    />
+                  </span>
+                  <SourceTag source={r.source} />
+                </span>
+                <span className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm">
+                  <span className={`flex min-w-0 items-center gap-2 ${r.score.home > r.score.away ? "font-semibold" : ""}`}>
+                    <TeamLogo id={r.home.logo} name={r.home.name} size={18} />
+                    <span className="truncate">{r.home.name}</span>
+                  </span>
+                  <span className="tnum text-right font-semibold">{r.score.home}</span>
+                  <span className={`flex min-w-0 items-center gap-2 ${r.score.away > r.score.home ? "font-semibold" : ""}`}>
+                    <TeamLogo id={r.away.logo} name={r.away.name} size={18} />
+                    <span className="truncate">{r.away.name}</span>
+                  </span>
+                  <span className="tnum text-right font-semibold">{r.score.away}</span>
+                </span>
+                <span className="mt-2.5 flex items-center justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate text-ink-2">
+                    <T en="Model:" pt="Modelo:" />{" "}
+                    <span className="font-medium text-ink">
+                      <OutcomeName outcome={r.pick} home={r.home.name} away={r.away.name} />
+                    </span>{" "}
+                    {pct(pickProb)}
+                  </span>
+                  <Verdict correct={r.correct} />
+                </span>
+                <span className="mt-1 flex items-center justify-between gap-3 text-xs text-ink-2">
+                  <span className="tnum">
+                    <T en="Likely score" pt="Resultado provável" /> {r.predScore.replace("-", "–")}
+                    {r.exactScore && (
+                      <span className="ml-1.5 font-medium text-good-ink">
+                        <T en="exact" pt="exato" />
+                      </span>
+                    )}
+                  </span>
+                  {r.marketPick ? (
+                    <span className={r.marketCorrect ? "text-good-ink" : "text-bad-ink"}>
+                      <T en="Bookmakers" pt="Casas" /> {r.marketCorrect ? "✓" : "✗"}
+                    </span>
+                  ) : null}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+        {results && shown.length === 0 && (
+          <li className="px-4 py-8 text-center text-sm text-ink-2">
+            <T en="Nothing matches these filters." pt="Nada corresponde a estes filtros." />
+          </li>
+        )}
+      </ul>
+
       {/* On large screens the page itself scrolls the table, so the header can stay pinned. */}
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface lg:overflow-visible">
+      <div className="scroll-x hidden rounded-xl border border-line bg-surface sm:block lg:overflow-visible">
         <table className="tnum w-full min-w-[60rem] text-sm">
           <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-surface [&_th]:shadow-[inset_0_-1px_0_var(--line)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
             <tr className="text-left text-xs text-ink-3">

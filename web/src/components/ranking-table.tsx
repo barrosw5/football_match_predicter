@@ -83,14 +83,14 @@ export function RankingTable({ clubs, valueDate }: { clubs: RankingClub[]; value
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div role="group" className="flex rounded-lg border border-line bg-surface p-0.5">
+        <div role="group" className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:w-auto">
           {([7, 30] as const).map((p) => (
             <button
               key={p}
               type="button"
               aria-pressed={period === p}
               onClick={() => setPeriod(p)}
-              className={`rounded-md px-3 py-1.5 text-sm ${period === p ? "bg-surface-2 font-medium" : "text-ink-2 hover:text-ink"}`}
+              className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm sm:flex-none ${period === p ? "bg-surface-2 font-medium" : "text-ink-2 hover:text-ink"}`}
             >
               {p === 7 ? tr(lang, "Last 7 days", "Últimos 7 dias") : tr(lang, "Last 30 days", "Últimos 30 dias")}
             </button>
@@ -103,7 +103,7 @@ export function RankingTable({ clubs, valueDate }: { clubs: RankingClub[]; value
             setCountry(e.target.value);
             setPage(0);
           }}
-          className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm sm:flex-none"
         >
           <option value="">{tr(lang, "Every country", "Todos os países")}</option>
           {countries.map((c) => (
@@ -121,32 +121,32 @@ export function RankingTable({ clubs, valueDate }: { clubs: RankingClub[]; value
             setQuery(e.target.value);
             setPage(0);
           }}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:max-w-56"
+          className="order-last w-full min-w-0 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1"
         />
         <span className="tnum ml-auto text-sm text-ink-3">
           {rows.length} {tr(lang, "clubs", "clubes")}
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface lg:overflow-visible">
-        <table className="tnum w-full min-w-[52rem] text-sm">
+      <div className="scroll-x rounded-xl border border-line bg-surface lg:overflow-visible">
+        <table className="tnum w-full text-sm sm:min-w-[52rem]">
           <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-surface [&_th]:shadow-[inset_0_-1px_0_var(--line)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
             <tr className="text-left text-xs text-ink-3">
-              <th className="w-14 px-4 py-2.5 text-right font-normal">#</th>
-              <th className="w-16 px-2 py-2.5 font-normal">
+              <th className="w-10 py-2.5 pl-3 pr-1 text-right font-normal sm:w-14 sm:px-4">#</th>
+              <th className="hidden w-16 px-2 py-2.5 font-normal sm:table-cell">
                 <T en="Move" pt="Mudança" />
               </th>
               <th className="px-2 py-2.5 font-normal">
                 <T en="Club" pt="Clube" />
               </th>
               <th className="px-2 py-2.5 text-right font-normal">Elo</th>
-              <th className="px-2 py-2.5 text-right font-normal">
+              <th className="hidden px-2 py-2.5 text-right font-normal sm:table-cell">
                 <T en="Elo, 30 days" pt="Elo, 30 dias" />
               </th>
-              <th className="px-2 py-2.5 font-normal">
+              <th className="hidden px-2 py-2.5 font-normal sm:table-cell">
                 <T en="Last 10 matches" pt="Últimos 10 jogos" />
               </th>
-              <th className="px-4 py-2.5 text-right font-normal">
+              <th className="py-2.5 pl-2 pr-3 text-right font-normal sm:px-4">
                 <T en="Squad value" pt="Valor do plantel" />
               </th>
             </tr>
@@ -154,11 +154,16 @@ export function RankingTable({ clubs, valueDate }: { clubs: RankingClub[]; value
           <tbody className="divide-y divide-line">
             {shown.map((c) => (
               <tr key={c.key} className="hover:bg-surface-2">
-                <td className="px-4 py-2 text-right font-semibold">{c.rank}</td>
-                <td className="px-2 py-2">
+                <td className="py-2 pl-3 pr-1 text-right font-semibold sm:px-4">
+                  {c.rank}
+                  <span className="block text-[11px] font-normal sm:hidden">
+                    <Movement change={period === 7 ? c.change7 : c.change30} lang={lang} />
+                  </span>
+                </td>
+                <td className="hidden px-2 py-2 sm:table-cell">
                   <Movement change={period === 7 ? c.change7 : c.change30} lang={lang} />
                 </td>
-                <td className="max-w-72 px-2 py-2">
+                <td className="max-w-[11rem] px-2 py-2 sm:max-w-72">
                   <span className="flex min-w-0 items-center gap-2">
                     <TeamLogo id={c.logo} name={c.name} size={20} />
                     <span className="min-w-0">
@@ -174,23 +179,23 @@ export function RankingTable({ clubs, valueDate }: { clubs: RankingClub[]; value
                 </td>
                 <td className="px-2 py-2 text-right font-semibold">{Math.round(c.elo)}</td>
                 <td
-                  className={`px-2 py-2 text-right ${
+                  className={`hidden px-2 py-2 text-right sm:table-cell ${
                     c.elo30 === null ? "text-ink-3" : c.elo30 > 0 ? "text-good-ink" : c.elo30 < 0 ? "text-bad-ink" : "text-ink-2"
                   }`}
                 >
                   {c.elo30 === null ? "–" : `${c.elo30 > 0 ? "+" : c.elo30 < 0 ? "−" : ""}${Math.abs(Math.round(c.elo30))}`}
                 </td>
-                <td className="px-2 py-2">
+                <td className="hidden px-2 py-2 sm:table-cell">
                   <span title={c.history.map((v) => Math.round(v)).join(" · ")}>
                     <Sparkline values={c.history} />
                   </span>
                 </td>
-                <td className="px-4 py-2 text-right">
+                <td className="whitespace-nowrap py-2 pl-2 pr-3 text-right sm:px-4">
                   <span className="font-medium">{money(c.value)}</span>
                   {c.valueChange12m !== null && (
                     <span className={`block text-[11px] ${c.valueChange12m >= 0 ? "text-good-ink" : "text-bad-ink"}`}>
                       {c.valueChange12m >= 0 ? "+" : "−"}
-                      {Math.abs(Math.round(c.valueChange12m))} M€ {tr(lang, "in 12 months", "em 12 meses")}
+                      {Math.abs(Math.round(c.valueChange12m))} M€<span className="hidden sm:inline"> {tr(lang, "in 12 months", "em 12 meses")}</span>
                     </span>
                   )}
                 </td>

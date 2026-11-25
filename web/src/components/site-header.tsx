@@ -1,21 +1,26 @@
 import Link from "next/link";
 
 import { LanguageToggle } from "./language-toggle";
-import { NavLinks } from "./nav-links";
+import { MobileMenu, NavLinks } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+    // Sticky on phones and tablets, where the menu button should stay in reach.
+    <header className="sticky top-0 z-40 border-b border-line bg-surface lg:static">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-x-6 px-4 py-2.5 sm:px-6 lg:py-3">
         <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
           <PitchMark />
           <span>Match Predictor</span>
         </Link>
-        <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-3">
+        <div className="hidden items-center gap-3 lg:flex">
           <NavLinks />
           <LanguageToggle />
           <ThemeToggle />
+        </div>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle />
+          <MobileMenu />
         </div>
       </div>
     </header>

@@ -69,7 +69,7 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
   return (
     <section aria-label={tr(lang, "Upcoming fixtures", "Próximos jogos")}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div role="group" className="flex flex-wrap rounded-lg border border-line bg-surface p-0.5">
+        <div role="group" className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:w-auto">
           {GROUPS.map((g) => (
             <button
               key={g.id}
@@ -79,7 +79,7 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
                 setGroup(g.id);
                 setCompetition("");
               }}
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+              className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-sm transition-colors sm:flex-none sm:px-3 ${
                 group === g.id && !competition ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink"
               }`}
             >
@@ -88,6 +88,7 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
           ))}
         </div>
         <CompetitionPicker
+          className="min-w-0 flex-1 sm:flex-none"
           competitions={competitions}
           value={competition}
           onChange={(c) => {
@@ -101,7 +102,7 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
           placeholder={tr(lang, "Search a team", "Procurar equipa")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:max-w-56"
+          className="order-last w-full min-w-0 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1"
         />
         <span className="tnum ml-auto text-sm text-ink-3">
           {visible.length} <T en="matches" pt="jogos" />
@@ -117,10 +118,13 @@ export function FixtureBrowser({ fixtures, generatedAt }: { fixtures: Fixture[];
           >
             <T en="W" pt="V" />
           </span>
-          <T
-            en="Form: last 5 matches, latest on the right (filled). Hover a letter to see the match."
-            pt="Forma: últimos 5 jogos, o mais recente à direita (preenchido). Passa o rato numa letra para ver o jogo."
-          />
+          <span>
+            <T en="Form: last 5 matches, latest on the right (filled)." pt="Forma: últimos 5 jogos, o mais recente à direita (preenchido)." />
+            <span className="hidden pointer-fine:inline">
+              {" "}
+              <T en="Hover a letter to see the match." pt="Passa o rato numa letra para ver o jogo." />
+            </span>
+          </span>
         </p>
       </div>
 

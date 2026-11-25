@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps<"/match/[id]">): Pr
 }
 
 const key = (o: Outcome) => (o === "H" ? "home" : o === "D" ? "draw" : "away");
-const card = "rounded-2xl border border-line bg-surface p-5 sm:p-6";
+const card = "rounded-2xl border border-line bg-surface p-4 sm:p-6";
 
 export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   const { id } = await params;
@@ -90,13 +90,13 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
           <SourceTag source={match.source} />
         </div>
 
-        <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4">
           <TeamBlock team={match.home} form={homeForm} align="left" />
-          <div className="tnum text-center">
+          <div className="tnum max-w-[5.5rem] text-center sm:max-w-none">
             {result ? (
-              <div className="text-4xl font-semibold tracking-tight sm:text-5xl">
+              <div className="whitespace-nowrap text-3xl font-semibold tracking-tight sm:text-5xl">
                 {result.score.home}
-                <span className="px-2 text-ink-3">–</span>
+                <span className="px-1 text-ink-3 sm:px-2">–</span>
                 {result.score.away}
               </div>
             ) : (
@@ -293,8 +293,8 @@ function TeamBlock({ team, form, align }: { team: Team; form?: FormGame[]; align
   const hasPage = slug in getTeams();
   const identity = (
     <>
-      <TeamLogo id={team.logo} name={team.name} size={48} />
-      <span className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">{team.name}</span>
+      <TeamLogo id={team.logo} name={team.name} size={44} />
+      <span className="text-lg font-semibold leading-tight tracking-tight text-balance break-words sm:text-2xl">{team.name}</span>
     </>
   );
   return (

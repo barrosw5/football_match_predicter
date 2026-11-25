@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps<"/team/[slug]">): P
   return team ? { title: team.name, description: `${team.name}: Elo, forecasts, squad and full match history.` } : {};
 }
 
-const card = "rounded-2xl border border-line bg-surface p-5 sm:p-6";
+const card = "rounded-2xl border border-line bg-surface p-4 sm:p-6";
 
 const money = (v: number | null) => (v === null ? "–" : v >= 1000 ? `${(v / 1000).toFixed(2)} B€` : `${Math.round(v)} M€`);
 
@@ -163,19 +163,21 @@ export default async function TeamPage({ params }: PageProps<"/team/[slug]">) {
                 r.pick === "D" ? { en: "draw", pt: "empate" } : (r.pick === "H") === r.home ? { en: "win", pt: "vitória" } : { en: "loss", pt: "derrota" };
               const row = (
                 <span className="flex items-center gap-3 border-b border-line py-2 text-sm">
-                  <span className="w-16 shrink-0 text-xs text-ink-3">
+                  <span className="w-11 shrink-0 text-xs text-ink-3 sm:w-14">
                     <LocalDate iso={`${r.date}T12:00:00Z`} kind="dayMonth" />
                   </span>
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                    <span className="shrink-0">{r.home ? "vs" : <T en="at" pt="em" />}</span>
-                    <TeamLogo id={r.opponentLogo} name={r.opponent} size={16} />
-                    <span className="truncate">{r.opponent}</span>
-                    <span className="tnum shrink-0 font-semibold">
-                      {r.goalsFor}–{r.goalsAgainst}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="shrink-0 text-xs text-ink-3">{r.home ? "vs" : <T en="at" pt="em" />}</span>
+                      <TeamLogo id={r.opponentLogo} name={r.opponent} size={16} />
+                      <span className="truncate">{r.opponent}</span>
+                    </span>
+                    <span className="block text-xs text-ink-2">
+                      <T en={`pick: ${pickText.en}`} pt={`previsão: ${pickText.pt}`} />
                     </span>
                   </span>
-                  <span className="shrink-0 text-xs text-ink-2">
-                    <T en={`pick: ${pickText.en}`} pt={`previsão: ${pickText.pt}`} />
+                  <span className="tnum shrink-0 font-semibold">
+                    {r.goalsFor}–{r.goalsAgainst}
                   </span>
                   <Verdict correct={r.correct} />
                 </span>

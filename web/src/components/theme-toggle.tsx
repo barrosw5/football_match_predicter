@@ -44,7 +44,7 @@ export function ThemeToggle() {
       onClick={() => setTheme(next)}
       aria-label={label}
       title={label}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-line text-ink-2 transition-colors hover:text-ink"
+      className="inline-flex h-9 w-9 items-center lg:h-7 lg:w-7 justify-center rounded-md border border-line text-ink-2 transition-colors hover:text-ink"
     >
       {theme === "dark" ? (
         // sun: shown in dark mode, switches to light

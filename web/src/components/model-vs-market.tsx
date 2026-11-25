@@ -48,7 +48,7 @@ export function ModelVsMarket({ m }: { m: Market }) {
   ] as const;
 
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5">
+    <section className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <h2 className="font-semibold">
         <T en="Model vs bookmakers" pt="Modelo vs casas de apostas" />
       </h2>

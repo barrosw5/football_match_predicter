@@ -102,7 +102,7 @@ function Marker({ p, events, side }: { p: LineupPlayer; events: MatchEvent[]; si
           </span>
         )}
       </span>
-      <span className="mt-1 max-w-[4.5rem] truncate text-center text-[10px] leading-3 text-ink sm:max-w-[6rem] sm:text-[11px]">
+      <span className="mt-0.5 max-w-[4rem] truncate text-center text-[10px] leading-3 text-ink sm:max-w-[6rem] sm:text-[11px]">
         {shortName(p.name)}
       </span>
     </>
@@ -153,7 +153,7 @@ export function Pitch({ home, away }: { home: Side; away: Side }) {
   return (
     <div className="overflow-hidden rounded-xl border border-line">
       <TeamBar side={away} />
-      <div className="relative w-full" style={{ aspectRatio: "0.72", background: "var(--pitch)" }}>
+      <div className="relative aspect-[0.6] w-full sm:aspect-[0.72]" style={{ background: "var(--pitch)" }}>
         <svg viewBox="0 0 72 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <g fill="none" stroke="var(--pitch-line)" strokeWidth="0.4">
             <rect x="2" y="1.5" width="68" height="97" />

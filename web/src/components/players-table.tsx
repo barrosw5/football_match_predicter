@@ -114,6 +114,7 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
     <div className={data ? "" : "opacity-60"}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <CompetitionPicker
+          className="w-full sm:w-auto"
           competitions={available}
           value={competition}
           onChange={(c) => {
@@ -146,7 +147,7 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
             setQuery(e.target.value);
             setPage(0);
           }}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:max-w-64"
+          className="w-full min-w-0 rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-ink-3 sm:w-auto sm:max-w-64 sm:flex-1"
         />
         <span className="tnum ml-auto text-sm text-ink-3">
           {rows.length} {tr(lang, "players", "jogadores")}
@@ -154,12 +155,12 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface lg:overflow-visible">
-        <table className="tnum w-full min-w-[60rem] text-sm">
+      <div className="scroll-x rounded-xl border border-line bg-surface lg:overflow-visible">
+        <table className="tnum w-full min-w-[46rem] text-sm lg:min-w-[60rem]">
           <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-surface [&_th]:shadow-[inset_0_-1px_0_var(--line)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
             <tr className="text-xs text-ink-3">
-              <th className="w-12 px-3 py-2.5 text-right font-normal">#</th>
-              <th className="px-2 py-2.5 text-left font-normal">{tr(lang, "Player", "Jogador")}</th>
+              <th className="hidden w-12 px-3 py-2.5 text-right font-normal sm:table-cell">#</th>
+              <th className="px-3 max-sm:left-0 max-sm:!z-20 py-2.5 text-left font-normal max-sm:shadow-[inset_-1px_-1px_0_var(--line)] sm:px-2">{tr(lang, "Player", "Jogador")}</th>
               {COLUMNS.map((c) => {
                 const active = sort.key === c.key;
                 return (
@@ -189,11 +190,11 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
               </tr>
             )}
             {shown.map((r, i) => (
-              <tr key={r.id} className="hover:bg-surface-2">
-                <td className="px-3 py-2 text-right text-ink-3">{current * PAGE + i + 1}</td>
-                <td className="max-w-72 px-2 py-2">
+              <tr key={r.id} className="group/p hover:bg-surface-2">
+                <td className="hidden px-3 py-2 text-right text-ink-3 sm:table-cell">{current * PAGE + i + 1}</td>
+                <td className="max-w-[9.5rem] px-3 py-2 max-sm:sticky max-sm:left-0 max-sm:z-[1] max-sm:bg-surface max-sm:shadow-[inset_-1px_0_0_var(--line)] max-sm:group-hover/p:bg-surface-2 sm:max-w-72 sm:px-2">
                   <span className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[11px] font-semibold text-ink-2">
+                    <span className="hidden h-8 w-8 shrink-0 items-center sm:flex justify-center rounded-full bg-surface-2 text-[11px] font-semibold text-ink-2">
                       {initials(r.name)}
                     </span>
                     <span className="min-w-0">
@@ -216,7 +217,7 @@ export function PlayersTable({ competitions }: { competitions: PickerCompetition
                 {COLUMNS.map((c) => (
                   <td
                     key={c.key}
-                    className={`px-2 py-2 text-right last:pr-4 ${sort.key === c.key ? "font-semibold text-ink" : "text-ink-2"}`}
+                    className={`whitespace-nowrap px-2 py-2 text-right last:pr-4 ${sort.key === c.key ? "font-semibold text-ink" : "text-ink-2"}`}
                   >
                     {c.key === "value" ? money(r.value) : r[c.key]}
                   </td>

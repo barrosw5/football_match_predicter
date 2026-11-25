@@ -13,31 +13,32 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
   const f = fixture;
   const likely = `${Math.floor(f.xg.home)}–${Math.floor(f.xg.away)}`;
   const pickProb = f.pick === "H" ? f.probs.home : f.pick === "D" ? f.probs.draw : f.probs.away;
+  const when =
+    f.status === "awaiting_result" ? (
+      <span className="text-xs text-ink-3">
+        <T en="played" pt="jogado" />
+      </span>
+    ) : (
+      formatTime(f.kickoff)
+    );
   return (
     <li className="group/row">
       <Link
         href={`/match/${f.id}/`}
-        className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3 group-first/row:rounded-t-xl group-last/row:rounded-b-xl gap-y-3 px-4 py-3.5 transition-colors hover:bg-surface-2 md:grid-cols-[3.25rem_minmax(0,1.3fr)_minmax(0,1fr)_7rem] md:items-center"
+        className="grid grid-cols-1 gap-y-3 px-4 py-3.5 transition-colors group-first/row:rounded-t-xl group-last/row:rounded-b-xl hover:bg-surface-2 active:bg-surface-2 md:grid-cols-[3.25rem_minmax(0,1.3fr)_minmax(0,1fr)_7rem] md:items-center md:gap-x-3"
       >
-        <div className="tnum pt-0.5 text-sm text-ink-2 md:pt-0">
-          {f.status === "awaiting_result" ? (
-            <span className="text-xs text-ink-3">
-              <T en="played" pt="jogado" />
-            </span>
-          ) : (
-            formatTime(f.kickoff)
-          )}
-        </div>
+        <div className="tnum hidden text-sm text-ink-2 md:block">{when}</div>
 
         <div className="min-w-0">
-          <div className="mb-1.5">
+          <div className="mb-1.5 flex items-center justify-between gap-3">
             <CompetitionTag competition={f.competition} />
+            <span className="tnum shrink-0 text-sm text-ink-2 md:hidden">{when}</span>
           </div>
           <TeamLine team={f.home} bold={f.pick === "H"} />
           <TeamLine team={f.away} bold={f.pick === "A"} />
         </div>
 
-        <div className="col-start-2 md:col-start-auto">
+        <div className="min-w-0">
           <div className="mb-1.5 flex items-baseline justify-between gap-2 text-sm">
             <span className="shrink-0 text-xs text-ink-3">
               <T en="Prediction" pt="Previsão" />
@@ -55,11 +56,13 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
               <span className="shrink-0 text-ink-3">
                 <T en="Bookmakers" pt="Casas de apostas" />
               </span>
-              <span className="min-w-0 truncate">
-                <OutcomeName outcome={f.market.pick} home={f.home.name} away={f.away.name} homeLogo={f.home.logo} awayLogo={f.away.logo} />{" "}
-                {pct(f.market.probs[f.market.pick === "H" ? "home" : f.market.pick === "D" ? "draw" : "away"])}
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <span className="min-w-0 truncate">
+                  <OutcomeName outcome={f.market.pick} home={f.home.name} away={f.away.name} homeLogo={f.home.logo} awayLogo={f.away.logo} />{" "}
+                  {pct(f.market.probs[f.market.pick === "H" ? "home" : f.market.pick === "D" ? "draw" : "away"])}
+                </span>
                 {f.market.pick !== f.pick && (
-                  <span className="ml-1.5 rounded border border-line px-1 text-[10px] text-ink">
+                  <span className="shrink-0 rounded border border-line px-1 text-[10px] text-ink">
                     <T en="disagree" pt="discordam" />
                   </span>
                 )}
@@ -68,7 +71,7 @@ export function FixtureRow({ fixture }: { fixture: Fixture }) {
           )}
         </div>
 
-        <div className="tnum col-start-2 flex items-baseline gap-4 text-sm md:col-start-auto md:flex-col md:items-end md:gap-0.5">
+        <div className="tnum flex items-baseline gap-4 text-sm md:flex-col md:items-end md:gap-0.5">
           <span className="text-xs text-ink-3">
             <T en="Likely score" pt="Resultado provável" />
           </span>
@@ -89,7 +92,7 @@ function TeamLine({ team, bold }: { team: Team; bold: boolean }) {
         <TeamLogo id={team.logo} name={team.name} size={20} />
         <span className={`truncate ${bold ? "font-semibold" : ""}`}>{team.name}</span>
       </span>
-      <span className="hidden shrink-0 sm:inline-flex">
+      <span className="inline-flex shrink-0">
         <FormPills games={team.form} />
       </span>
     </div>

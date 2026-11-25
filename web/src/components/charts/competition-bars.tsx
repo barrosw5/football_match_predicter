@@ -17,17 +17,17 @@ export function CompetitionBars({ rows, overall }: { rows: WindowStats["byCompet
   };
   return (
     <div>
-      <ul className="grid grid-cols-1 gap-x-10 gap-y-1.5 text-sm lg:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-x-10 gap-y-3 text-sm sm:gap-y-1.5 lg:grid-cols-2">
         {sorted.map((r) => (
           <li
             key={r.code}
-            className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_3.5rem] items-center gap-3 sm:grid-cols-[minmax(0,11.5rem)_minmax(0,1fr)_3.5rem]"
+            className="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-x-3 sm:grid-cols-[minmax(0,11.5rem)_minmax(0,1fr)_3.5rem]"
             title={`${r.correct} / ${r.n}`}
           >
-            <span className="truncate text-ink-2">
+            <span className="col-start-1 row-start-1 truncate text-ink-2">
               <T en={label(r, "en")} pt={label(r, "pt")} />
             </span>
-            <span className="relative h-5">
+            <span className="relative col-start-1 row-start-2 h-4 sm:col-start-2 sm:row-start-1 sm:h-5">
               <span
                 className="grow-x absolute inset-y-1 left-0 rounded-r-[4px] bg-[var(--home)]"
                 style={{ width: `${Math.max(1, r.accuracy * 100)}%` }}
@@ -40,7 +40,7 @@ export function CompetitionBars({ rows, overall }: { rows: WindowStats["byCompet
                 />
               )}
             </span>
-            <span className="tnum text-right">
+            <span className="tnum col-start-2 row-span-2 row-start-1 self-center text-right sm:col-start-3 sm:row-span-1">
               <span className="font-medium">{pct(r.accuracy)}</span>
               <span className="block text-[11px] leading-3 text-ink-3">
                 <T en={`${int(r.n)} games`} pt={`${int(r.n)} jogos`} />

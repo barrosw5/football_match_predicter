@@ -67,7 +67,7 @@ function LeaderTable({
   lang: "en" | "pt";
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5">
+    <section className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <h2 className="font-semibold">{title}</h2>
       <table className="tnum mt-3 w-full text-sm">
         <thead>

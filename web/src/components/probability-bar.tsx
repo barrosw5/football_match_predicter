@@ -56,7 +56,9 @@ export function ProbabilityBar({
               {labels ? (
                 <span className="font-normal text-ink-3">{labels[i]} </span>
               ) : (
-                size === "lg" && <span className="font-normal text-ink-3">{team ?? <T en={s.en} pt={s.pt} />} </span>
+                size === "lg" && (
+                  <span className="block truncate font-normal text-ink-3 sm:inline">{team ?? <T en={s.en} pt={s.pt} />} </span>
+                )
               )}
               {pct(probs[s.key])}
             </span>
